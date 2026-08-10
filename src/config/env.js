@@ -113,6 +113,7 @@ export function loadConfig(env = process.env) {
     maxPluginConcurrency: readInteger(env, 'MAX_PLUGIN_CONCURRENCY', 8, { min: 1, max: 128 }),
     permissionTimeoutMs: readInteger(env, 'PERMISSION_TIMEOUT_MS', 5000, { min: 100, max: 60000 }),
     groupMetadataTtlMs: readInteger(env, 'GROUP_METADATA_TTL_MS', 30000, { min: 1000, max: 600000 }),
+    antilinkRemoveUser: readBoolean(env, 'ANTILINK_REMOVE_USER', false),
     outboundGlobalPerSecond: readFloat(env, 'OUTBOUND_GLOBAL_PER_SECOND', 5, { min: 0.1, max: 1000 }),
     outboundPerChatPerSecond: readFloat(env, 'OUTBOUND_PER_CHAT_PER_SECOND', 0.5, { min: 0.01, max: 100 }),
     outboundQueueLimit: readInteger(env, 'OUTBOUND_QUEUE_LIMIT', 200, { min: 1, max: 10000 }),

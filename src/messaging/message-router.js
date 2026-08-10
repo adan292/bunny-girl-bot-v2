@@ -1,4 +1,5 @@
 import { BoundedTaskPool } from './serial-queue.js';
+import { sendInteractiveList } from './interactive-builder.js';
 import { normalizeIncomingMessage } from './message-normalizer.js';
 
 function comparableJid(value) {
@@ -74,6 +75,7 @@ function ownerJidSet(ownerJids) {
 export class MessageRouter {
   constructor({
     config = {},
+    database = config.database,
     pluginManager,
     outboundQueue,
     diagnostics,
@@ -93,6 +95,7 @@ export class MessageRouter {
     }
 
     this.config = config;
+    this.database = database;
     this.pluginManager = pluginManager;
     this.outboundQueue = outboundQueue;
     this.diagnostics = diagnostics;
@@ -137,9 +140,10 @@ export class MessageRouter {
   }
 
   async #handleOne({ socket, raw, signal }) {
+    const prefixes = await this.#prefixesFor(raw.key?.remoteJid);
     const normalized = normalizeIncomingMessage(raw, {
       maxTextLength: this.maxTextLength,
-      prefixes: this.prefixes,
+      prefixes,
     });
 
     if (!normalized.accepted) {
@@ -164,9 +168,15 @@ export class MessageRouter {
       raw,
       message,
       permissions,
+      database: this.database,
       config: this.config,
       logger: this.logger,
       signal,
+      consumeCooldown: (cooldownMs, commandKey) => this.#consumeCooldown(
+        message.senderJid,
+        commandKey ?? message.command,
+        cooldownMs,
+      ),
       reply: (payload, options = {}) => this.#send(
         socket,
         message.remoteJid,
@@ -174,7 +184,17 @@ export class MessageRouter {
         signal,
         options.quoted === false ? undefined : { quoted: raw },
       ),
-      send: (jid, payload, options) => this.#send(
+      replyInteractiveList: (options = {}) => this.outboundQueue.enqueue({
+        jid: message.remoteJid,
+        signal,
+        task: () => sendInteractiveList(
+          socket,
+          message.remoteJid,
+          options,
+          { quoted: raw },
+        ),
+      }),
+      send:  (jid, payload, options) => this.#send(
         socket,
         jid,
         payload,
@@ -184,6 +204,41 @@ export class MessageRouter {
     };
 
     await this.pluginManager.dispatch(context, this.diagnostics);
+  }
+
+  async #prefixesFor(remoteJid) {
+    if (!this.database || typeof remoteJid !== 'string' || !remoteJid.endsWith('@g.us')) {
+      return this.prefixes;
+    }
+
+    try {
+      const settings = await this.database.getGroupSettings(remoteJid);
+      return settings.prefix ? [settings.prefix] : this.prefixes;
+    } catch (error) {
+      this.logger.warn({ err: error, jid: remoteJid }, 'Group prefix lookup failed; using global prefixes');
+      return this.prefixes;
+    }
+  }
+
+  async #consumeCooldown(jid, commandKey, cooldownMs) {
+    if (!this.database || !Number.isSafeInteger(cooldownMs) || cooldownMs <= 0) {
+      return { allowed: true, remainingMs: 0 };
+    }
+
+    const safeCommand = String(commandKey ?? 'unknown')
+      .toLowerCase()
+      .replace(/[^a-z0-9_:-]/gu, '-')
+      .slice(0, 64);
+
+    try {
+      return await this.database.claimCooldown(jid, safeCommand, cooldownMs);
+    } catch (error) {
+      this.logger.error({ err: error, jid, command: safeCommand }, 'Cooldown persistence failed; denying execution');
+      return {
+        allowed: false,
+        remainingMs: cooldownMs,
+      };
+    }
   }
 
   #send(socket, jid, payload, signal, options) {

@@ -63,6 +63,22 @@ test('extracts command, quoted arguments, mentions and quote metadata', () => {
   assert.equal(result.message.isGroup, true);
 });
 
+test('normalizes decrypted poll results as command input', () => {
+  const result = normalizeIncomingMessage({
+    key: { id: 'poll-1', remoteJid: '527711234567@s.whatsapp.net' },
+    message: {
+      pollResultSnapshotMessage: {
+        name: 'Economía',
+        pollVotes: [{ optionName: '.bal', optionVoteCount: 1 }],
+      },
+    },
+  });
+
+  assert.equal(result.message.poll.type, 'result');
+  assert.deepEqual(result.message.poll.selectedOptions, ['.bal']);
+  assert.equal(result.message.command, 'bal');
+});
+
 test('normalizes button and list responses as command input', () => {
   const button = normalizeIncomingMessage({
     key: { id: 'button-1', remoteJid: '527711234567@s.whatsapp.net' },

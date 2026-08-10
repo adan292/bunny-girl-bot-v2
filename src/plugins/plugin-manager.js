@@ -100,9 +100,15 @@ function validatePlugin(candidate, filePath) {
     throw new Error(`Plugin ${filePath} priority must be an integer`);
   }
 
+  const cooldownMs = candidate.cooldownMs ?? 0;
+  if (!Number.isSafeInteger(cooldownMs) || cooldownMs < 0) {
+    throw new Error(`Plugin ${filePath} cooldownMs must be a non-negative integer`);
+  }
+
   return Object.freeze({
     ...candidate,
     priority,
+    cooldownMs,
     commands: Object.freeze(commands),
     permissions: Object.freeze(normalizePermissions(candidate.permissions)),
     silentDenied: candidate.silentDenied === true,
@@ -435,6 +441,27 @@ export class PluginManager {
         };
       }
 
+      if (plugin.cooldownMs > 0 && typeof context.consumeCooldown === 'function') {
+        const cooldown = await context.consumeCooldown(
+          plugin.cooldownMs,
+          `plugin:${plugin.name}`,
+        );
+
+        if (!cooldown?.allowed) {
+          if (typeof context.reply === 'function') {
+            await context.reply({
+              text: `⏳ Espera ${Math.max(1, Math.ceil((cooldown?.remainingMs ?? plugin.cooldownMs) / 1000))} segundos antes de usar este comando otra vez.`,
+            });
+          }
+
+          return {
+            handled: true,
+            cooldown: true,
+            plugin: plugin.name,
+          };
+        }
+      }
+
       try {
         const result = await plugin.execute(context);
 
@@ -494,6 +521,7 @@ export class PluginManager {
       priority: plugin.priority,
       commands: [...plugin.commands],
       permissions: [...plugin.permissions],
+      cooldownMs: plugin.cooldownMs,
       filePath: plugin.filePath,
     }));
   }

@@ -111,10 +111,58 @@ function interactiveResult(type, id, title, extra = {}) {
   });
 }
 
+export function extractPoll(message) {
+  const value = unwrapMessage(message);
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const creation = value.pollCreationMessage
+    ?? value.pollCreationMessageV2
+    ?? value.pollCreationMessageV3;
+  if (creation) {
+    return Object.freeze({
+      type: 'creation',
+      name: sanitizeScalar(creation.name, 256),
+      options: Object.freeze((creation.options ?? [])
+        .map((option) => sanitizeScalar(option?.optionName, 128))
+        .filter(Boolean)),
+      selectedOptions: Object.freeze([]),
+    });
+  }
+
+  const snapshot = value.pollResultSnapshotMessage;
+  if (snapshot) {
+    const selectedOptions = (snapshot.pollVotes ?? [])
+      .filter((vote) => Number(vote?.optionVoteCount ?? 0) > 0)
+      .map((vote) => sanitizeScalar(vote?.optionName, 128))
+      .filter(Boolean);
+
+    return Object.freeze({
+      type: 'result',
+      name: sanitizeScalar(snapshot.name, 256),
+      options: Object.freeze([]),
+      selectedOptions: Object.freeze(selectedOptions),
+    });
+  }
+
+  return null;
+}
+
 export function extractInteractive(message) {
   const value = unwrapMessage(message);
   if (!value || typeof value !== 'object') {
     return null;
+  }
+
+  const poll = extractPoll(value);
+  if (poll?.selectedOptions?.[0]) {
+    return interactiveResult(
+      'poll',
+      poll.selectedOptions[0],
+      poll.name,
+      { poll },
+    );
   }
 
   const button = value.buttonsResponseMessage;
@@ -313,11 +361,13 @@ export function parseCommand(text, {
   maxArgs = 64,
   maxArgLength = 512,
 } = {}) {
-  const allowedPrefixes = new Set(
-    prefixes.filter((prefix) => typeof prefix === 'string' && prefix.length === 1),
-  );
+  const value = typeof text === 'string' ? text : '';
+  const allowedPrefixes = [...new Set(prefixes
+    .filter((prefix) => typeof prefix === 'string' && prefix.length > 0)
+    .sort((left, right) => right.length - left.length))];
+  const prefix = allowedPrefixes.find((candidate) => value.startsWith(candidate));
 
-  if (!text || allowedPrefixes.size === 0 || !allowedPrefixes.has(text[0])) {
+  if (!value || !prefix) {
     return {
       prefix: null,
       command: null,
@@ -327,13 +377,17 @@ export function parseCommand(text, {
     };
   }
 
-  const separator = text.search(/\s/u);
-  const commandEnd = separator === -1 ? text.length : separator;
-  const rawCommand = text.slice(1, commandEnd).toLocaleLowerCase('en-US');
+  const commandStart = prefix.length;
+  const remainder = value.slice(commandStart);
+  const separatorInRemainder = remainder.search(/\s/u);
+  const commandEnd = separatorInRemainder === -1
+    ? value.length
+    : commandStart + separatorInRemainder;
+  const rawCommand = value.slice(commandStart, commandEnd).toLocaleLowerCase('en-US');
 
   if (!COMMAND_PATTERN.test(rawCommand)) {
     return {
-      prefix: text[0],
+      prefix,
       command: null,
       args: [],
       argumentText: '',
@@ -341,12 +395,12 @@ export function parseCommand(text, {
     };
   }
 
-  const argumentText = separator === -1
+  const argumentText = separatorInRemainder === -1
     ? ''
-    : text.slice(separator).trim();
+    : value.slice(commandEnd).trim();
 
   return {
-    prefix: text[0],
+    prefix,
     command: rawCommand,
     args: tokenizeArguments(argumentText, { maxArgs, maxArgLength }),
     argumentText,
@@ -401,6 +455,10 @@ function contentType(message) {
     'listResponseMessage',
     'templateButtonReplyMessage',
     'interactiveResponseMessage',
+    'pollCreationMessage',
+    'pollCreationMessageV2',
+    'pollCreationMessageV3',
+    'pollResultSnapshotMessage',
     'contactMessage',
     'contactsArrayMessage',
     'locationMessage',
@@ -487,6 +545,7 @@ export function normalizeIncomingMessage(raw, {
       mentions: Object.freeze(extractMentions(info)),
       quoted: normalizeQuotedMessage(info, remoteJid),
       interactive,
+      poll: extractPoll(raw.message),
       timestamp: raw.messageTimestamp ?? null,
       pushName: sanitizeScalar(raw.pushName, 128),
     }),

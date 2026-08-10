@@ -11,10 +11,13 @@ La primera entrega construye el core limpio, sin copiar archivos ni sesiones del
 - ESM estricto sobre Node.js 20+.
 - Autenticación por código de vinculación, con validación de número internacional.
 - Estado de autenticación propio, con cola serial, escritura temporal + `rename`, `fsync` y permisos restrictivos.
+- Adaptador SQLite con WAL, transacciones, cooldowns, economía, experiencia y configuración por grupo.
 - Supervisor de socket con una sola conexión activa, backoff exponencial con jitter y clasificación explícita de desconexiones.
 - Pipeline de plugins asíncrono y recargable en caliente, con aislamiento de errores por plugin.
-- Normalización de mensajes con comandos, prefijos, argumentos, menciones, citas e interacciones de botones/listas.
-- Router con permisos de usuario, admin, bot-admin y owner mediante metadatos de grupos.
+- Normalización de mensajes con comandos, prefijos personalizados por grupo, argumentos, menciones, citas e interacciones de botones/listas.
+- Builders para listas InteractiveMessage, fallback legacy y polls con mapas de comandos.
+- Router con permisos de usuario, admin, bot-admin y owner mediante metadatos de grupos, además de cooldown persistente por usuario/comando.
+- Listener de eventos de grupos para bienvenidas, despedidas, anti-link y administración modular.
 - Cola de salida con token bucket global y por chat, límites de cola y backpressure.
 - Plugin de descargas HTTP(S) con validación SSRF básica, límites de bytes, redirects controlados y streams sin archivos temporales.
 - Plugin de economía con `.bal`, `.work` y `.daily`, cooldowns y persistencia atómica aislada.
@@ -46,6 +49,7 @@ Requisitos:
 
 - Node.js `>=20.0.0`.
 - FFmpeg instalado y disponible en `PATH` si se usa el pipeline de media.
+- SQLite nativo mediante `better-sqlite3` compatible con Node.js 20.
 - Un número propio con capacidad de vincular dispositivos.
 
 ```bash
@@ -65,6 +69,10 @@ Al arrancar por primera vez, el código de vinculación aparecerá en el log. En
 
 - `.menu` y `/menu` muestran el menú del core.
 - `.ping` devuelve la latencia de la respuesta.
+- `.bal`, `.work` y `.daily` gestionan economía y experiencia.
+- `.download URL` descarga un recurso multimedia seguro.
+- `.kick`, `.promote`, `.demote`, `.tagall` y `.hidetag` administran grupos.
+- `.antilink`, `.welcome`, `.goodbye` y `.prefix` configuran grupos.
 
 Los plugins se cargan desde `src/plugins`. Cada archivo `*.plugin.js` debe exportar un objeto default con `name`, `priority`, `match` y `execute`. El gestor mantiene el plugin anterior si una edición nueva tiene un error de sintaxis o contrato.
 

@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { loadConfig } from './config/env.js';
 import { createLogger } from './observability/logger.js';
 import { DiagnosticEngine } from './core/diagnostic-engine.js';
@@ -6,6 +7,8 @@ import { PluginManager } from './plugins/plugin-manager.js';
 import { OutboundQueue } from './messaging/outbound-queue.js';
 import { MessageRouter } from './messaging/message-router.js';
 import { createHealthServer } from './http/health-server.js';
+import { getSharedDatabase } from './database/db-adapter.js';
+import { GroupHandler } from './messaging/group-handler.js';
 
 let config;
 let logger;
@@ -15,6 +18,8 @@ let outboundQueue;
 let router;
 let supervisor;
 let healthServer;
+let database;
+let groupHandler;
 let shuttingDown = false;
 
 async function shutdown(exitCode = 0) {
@@ -31,10 +36,16 @@ async function shutdown(exitCode = 0) {
   }
   try {
     router?.close();
+    groupHandler?.close();
     await outboundQueue?.onIdle();
     outboundQueue?.close();
   } catch (error) {
     logger?.error({ err: error }, 'Messaging shutdown failed');
+  }
+  try {
+    await database?.close();
+  } catch (error) {
+    logger?.error({ err: error }, 'Database shutdown failed');
   }
   try {
     await pluginManager?.close();
@@ -56,6 +67,10 @@ async function main() {
   config = loadConfig();
   logger = createLogger(config);
   diagnostics = new DiagnosticEngine({ logger });
+  database = await getSharedDatabase({
+    filename: join(config.economyDirectory, 'bunny-girl-bot.sqlite'),
+    logger,
+  });
 
   pluginManager = new PluginManager({
     directory: config.pluginsDirectory,
@@ -72,8 +87,16 @@ async function main() {
     maxQueue: config.outboundQueueLimit,
   });
 
+  groupHandler = new GroupHandler({
+    database,
+    outboundQueue,
+    logger,
+    config,
+  });
+
   router = new MessageRouter({
     config,
+    database,
     ownerJids: config.ownerJids,
     permissionTimeoutMs: config.permissionTimeoutMs,
     pluginManager,
@@ -92,6 +115,7 @@ async function main() {
     logger,
     diagnostics,
     router,
+    groupHandler,
   });
 
   healthServer = createHealthServer({

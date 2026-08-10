@@ -2,6 +2,7 @@ export default {
   name: 'core/ping',
   priority: 20,
   commands: ['ping'],
+  cooldownMs: 1000,
   match: /^(?:[./!]ping)$/iu,
   async execute({ reply }) {
     const startedAt = performance.now();

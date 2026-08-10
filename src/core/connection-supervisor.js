@@ -41,7 +41,7 @@ function pairCodeForDisplay(code) {
  * only then is a replacement created.
  */
 export class ConnectionSupervisor {
-  constructor({ config, logger, diagnostics, router }) {
+  constructor({ config, logger, diagnostics, router, groupHandler }) {
     if (!config || !logger || !diagnostics) {
       throw new TypeError('ConnectionSupervisor requires config, logger and diagnostics');
     }
@@ -51,6 +51,7 @@ export class ConnectionSupervisor {
     this.baileysLogger = logger.child({ component: 'baileys' });
     this.diagnostics = diagnostics;
     this.router = router;
+    this.groupHandler = groupHandler ?? null;
     this.abortController = new AbortController();
     this.authState = null;
     this.socket = null;
@@ -121,6 +122,7 @@ export class ConnectionSupervisor {
         }
 
         this.socket = null;
+        active.dispose?.();
         await this.#endSocket(active.socket, result.error);
         this.diagnostics.resetSocket?.(active.socket);
 
@@ -181,6 +183,7 @@ export class ConnectionSupervisor {
       } finally {
         if (active && this.socket === active.socket && !this.stopped) {
           this.socket = null;
+          active.dispose?.();
           await this.#endSocket(active.socket);
           this.diagnostics.resetSocket?.(active.socket);
         }
@@ -300,7 +303,12 @@ export class ConnectionSupervisor {
       }
     });
 
-    return { socket, closed };
+    const disposeGroupHandlers = this.groupHandler?.attach(socket) ?? (() => {});
+    return {
+      socket,
+      closed,
+      dispose: disposeGroupHandlers,
+    };
   }
 
   async #handleConnectionUpdate(socket, update) {

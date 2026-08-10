@@ -37,6 +37,23 @@ test('keeps startup alive when one plugin has an invalid contract', async () => 
   await manager.close();
 });
 
+test('enforces plugin cooldown before execute', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bunny-plugins-cooldown-'));
+  await writeFile(join(directory, 'cooldown.plugin.js'), `export default { name: 'test/cooldown', command: 'slow', cooldownMs: 5000, async execute() { throw new Error('must not execute'); } };`);
+  const manager = new PluginManager({ directory, logger: logger(), watchEnabled: false });
+  await manager.loadAll();
+  const sent = [];
+  const result = await manager.dispatch({
+    message: { id: 'cooldown-1', remoteJid: 'x@s.whatsapp.net', text: '.slow', command: 'slow' },
+    permissions: { user: true },
+    consumeCooldown: async () => ({ allowed: false, remainingMs: 2500 }),
+    reply: async (payload) => sent.push(payload),
+  }, { pluginFailure() {} });
+  assert.equal(result.cooldown, true);
+  assert.match(sent[0].text, /3 segundos/iu);
+  await manager.close();
+});
+
 test('matches declared commands and denies missing permissions', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'bunny-plugins-permissions-'));
   await writeFile(join(directory, 'admin.plugin.js'), `export default { name: 'test/admin', command: 'ban', permissions: ['admin'], async execute() { throw new Error('must not execute'); } };`);

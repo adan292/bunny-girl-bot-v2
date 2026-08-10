@@ -384,6 +384,7 @@ export default {
   commands: ['download', 'dl', 'descargar'],
   priority: 50,
   permissions: ['user'],
+  cooldownMs: 10000,
   async execute({ message, reply, signal, config }) {
     const url = message.args.find((argument) => /^https?:\/\//iu.test(argument));
 
