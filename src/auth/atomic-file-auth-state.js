@@ -203,6 +203,9 @@ export async function createAtomicFileAuthState({
       }
       await cachedStore.clear();
       await removeFile(credsPath);
+      for (const key of Object.keys(creds)) {
+        delete creds[key];
+      }
       Object.assign(creds, initAuthCreds());
     },
     async close() {

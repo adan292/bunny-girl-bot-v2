@@ -1,6 +1,6 @@
 import ffmpeg from 'fluent-ffmpeg';
 import WebP from 'node-webpmux';
-import { PassThrough, Writable } from 'node:stream';
+import { Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createLinkedAbortController } from '../utils/abort.js';
 

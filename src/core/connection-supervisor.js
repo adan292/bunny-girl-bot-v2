@@ -1,4 +1,5 @@
 import makeWASocket, { Browsers } from '@whiskeysockets/baileys';
+import { join } from 'node:path';
 import { createAtomicFileAuthState } from '../auth/atomic-file-auth-state.js';
 import { computeReconnectDelay, classifyDisconnect } from './reconnect-policy.js';
 import { sleep } from '../utils/abort.js';
@@ -24,6 +25,7 @@ export class ConnectionSupervisor {
     this.lastError = null;
     this.reconnectAttempt = 0;
     this.pairingSockets = new WeakSet();
+    this.missingPairingPhoneLogged = false;
   }
 
   async start() {
@@ -47,7 +49,7 @@ export class ConnectionSupervisor {
         if (!this.authState) {
           this.connection = 'loading-auth';
           this.authState = await createAtomicFileAuthState({
-            directory: `${this.config.authDirectory}/${this.config.sessionId}`,
+            directory: join(this.config.authDirectory, this.config.sessionId),
             logger: this.baileysLogger,
           });
         }
@@ -207,7 +209,7 @@ export class ConnectionSupervisor {
   }
 
   async #handleConnectionUpdate(socket, update) {
-    if (this.socket && this.socket !== socket && this.connection !== 'connecting') {
+    if (this.socket && this.socket !== socket) {
       return;
     }
 
@@ -229,8 +231,12 @@ export class ConnectionSupervisor {
   }
 
   async #requestPairingCode(socket) {
-    if (this.authState?.state.creds.registered || !this.config.pairingPhone || this.pairingSockets.has(socket)) {
-      if (!this.authState?.state.creds.registered && !this.config.pairingPhone) {
+    if (!this.authState || this.authState.state.creds.registered || this.pairingSockets.has(socket)) {
+      return;
+    }
+    if (!this.config.pairingPhone) {
+      if (!this.missingPairingPhoneLogged) {
+        this.missingPairingPhoneLogged = true;
         this.logger.error('No saved session and PAIRING_PHONE is not configured; pairing cannot start');
       }
       return;

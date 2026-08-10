@@ -135,10 +135,16 @@ export class OutboundQueue {
     }
   }
 
-  async onIdle() {
+  async onIdle(timeoutMs = 5000) {
+    const deadline = Date.now() + timeoutMs;
     while (this.active || this.pending.length > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      if (Date.now() >= deadline) {
+        this.logger.warn({ active: this.active, pending: this.pending.length }, 'Outbound queue did not drain before shutdown deadline');
+        return false;
+      }
+      await sleep(Math.min(25, Math.max(1, deadline - Date.now())));
     }
+    return true;
   }
 
   close(error = new Error('OutboundQueue closed')) {

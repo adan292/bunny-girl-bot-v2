@@ -1,6 +1,6 @@
 import { mkdir, readdir, stat } from 'node:fs/promises';
 import { watch } from 'node:fs';
-import { basename, extname, resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 function isPluginFile(name) {
