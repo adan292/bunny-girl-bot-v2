@@ -29,6 +29,7 @@ src/main.js
   ├─ auth/atomic-file-auth-state.js Estado creds + Signal keys
   ├─ core/connection-supervisor.js  Ciclo de vida del socket Baileys
   ├─ core/diagnostic-engine.js      Clasificación y recuperación
+  ├─ core/worker-task-runner.js     CPU-bound fuera del Event Loop
   ├─ messaging/message-router.js    Backpressure + aislamiento de plugins
   ├─ plugins/plugin-manager.js      Import dinámico y hot reload
   ├─ messaging/outbound-queue.js    Rate limit y backpressure de salida
