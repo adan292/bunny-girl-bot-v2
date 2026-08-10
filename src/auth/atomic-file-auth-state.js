@@ -17,7 +17,7 @@ import {
   initAuthCreds,
   proto,
 } from '@whiskeysockets/baileys';
-import { SerialTaskQueue } from '../core/serial-queue.js';
+import { SerialTaskQueue } from '../messaging/serial-queue.js';
 import { AuthStateCorruptionError } from '../utils/errors.js';
 
 class AuthStateLockError extends Error {

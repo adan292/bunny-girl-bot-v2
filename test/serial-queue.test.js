@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BoundedTaskPool, SerialTaskQueue } from '../src/core/serial-queue.js';
+import { BoundedTaskPool, SerialTaskQueue } from '../src/messaging/serial-queue.js';
 
 test('serial queue preserves task order after asynchronous work', async () => {
   const queue = new SerialTaskQueue();

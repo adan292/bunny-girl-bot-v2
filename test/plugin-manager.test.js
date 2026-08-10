@@ -27,3 +27,12 @@ test('loads and dispatches an ESM plugin', async () => {
   assert.deepEqual(sent, [{ text: 'ok' }]);
   await manager.close();
 });
+
+test('keeps startup alive when one plugin has an invalid contract', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bunny-plugins-invalid-'));
+  await writeFile(join(directory, 'invalid.plugin.js'), 'export default { name: "invalid" };');
+  const manager = new PluginManager({ directory, logger: logger(), watchEnabled: false });
+  await manager.loadAll();
+  assert.deepEqual(manager.list(), []);
+  await manager.close();
+});

@@ -1,5 +1,9 @@
 import { parentPort, workerData } from 'node:worker_threads';
 
+if (!parentPort) {
+  throw new Error('worker-entry requires a parent port');
+}
+
 function serializeError(error) {
   return {
     name: error instanceof Error ? error.name : 'Error',
@@ -9,18 +13,29 @@ function serializeError(error) {
   };
 }
 
-if (!parentPort) {
-  throw new Error('worker-entry requires a parent port');
+function post(message) {
+  try {
+    parentPort.postMessage(message);
+  } catch {
+    process.exitCode = 1;
+  }
 }
 
 try {
   const loaded = await import(workerData.moduleUrl);
   const operation = loaded[workerData.exportName] ?? loaded.default;
+
   if (typeof operation !== 'function') {
-    throw new TypeError(`Worker module does not export function ${workerData.exportName}`);
+    throw new TypeError(
+      `Worker module does not export function ${workerData.exportName}`,
+    );
   }
+
   const result = await operation(workerData.input);
-  parentPort.postMessage({ ok: true, result });
+  post({ ok: true, result });
 } catch (error) {
-  parentPort.postMessage({ ok: false, error: serializeError(error) });
+  post({
+    ok: false,
+    error: serializeError(error),
+  });
 }

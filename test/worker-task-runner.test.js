@@ -13,3 +13,15 @@ test('runs a pure operation outside the main thread boundary', async () => {
   assert.equal(await runner.run({ moduleUrl: modulePath, input: 21 }), 42);
   await runner.close();
 });
+
+test('terminates a worker that exceeds its execution timeout', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bunny-worker-timeout-'));
+  const modulePath = join(directory, 'slow.mjs');
+  await writeFile(modulePath, 'export default async () => new Promise((resolve) => setTimeout(resolve, 1000));');
+  const runner = new WorkerTaskRunner({ maxConcurrent: 1, maxQueue: 1 });
+  await assert.rejects(
+    runner.run({ moduleUrl: modulePath, timeoutMs: 100 }),
+    (error) => error.code === 'WORKER_TIMEOUT',
+  );
+  await runner.close();
+});

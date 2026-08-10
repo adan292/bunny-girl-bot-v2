@@ -1,4 +1,4 @@
-import { BoundedTaskPool } from '../core/serial-queue.js';
+import { BoundedTaskPool } from './serial-queue.js';
 import { normalizeIncomingMessage } from './message-normalizer.js';
 
 export class MessageRouter {
