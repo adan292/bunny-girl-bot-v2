@@ -1,6 +1,7 @@
 export default {
   name: 'core/help',
   priority: 10,
+  commands: ['menu'],
   match: /^(?:[./!]menu|menu)$/iu,
   async execute({ reply }) {
     await reply({

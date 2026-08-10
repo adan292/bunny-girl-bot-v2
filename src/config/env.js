@@ -57,6 +57,31 @@ function readPhone(env) {
   return raw ? normalizePhoneNumber(raw) : null;
 }
 
+function readOwnerJids(env) {
+  const raw = readString(env, 'OWNER_JIDS');
+  if (!raw) {
+    return Object.freeze([]);
+  }
+
+  const owners = raw.split(',').map((value) => value.trim()).filter(Boolean).map((value) => {
+    if (value.includes('@')) {
+      return value.toLowerCase();
+    }
+    return `${normalizePhoneNumber(value)}@s.whatsapp.net`;
+  });
+
+  return Object.freeze([...new Set(owners)]);
+}
+
+function readPrefixes(env) {
+  const raw = readString(env, 'COMMAND_PREFIXES', './!');
+  const prefixes = [...new Set([...raw].filter((prefix) => prefix.trim() !== ''))];
+  if (prefixes.length === 0 || prefixes.length > 8) {
+    throw new Error('COMMAND_PREFIXES must contain between 1 and 8 characters');
+  }
+  return Object.freeze(prefixes);
+}
+
 /**
  * Build and validate immutable runtime configuration.
  * @param {NodeJS.ProcessEnv} env
@@ -76,6 +101,8 @@ export function loadConfig(env = process.env) {
     logLevel: readString(env, 'LOG_LEVEL', 'info'),
     prettyLogs: readBoolean(env, 'PRETTY_LOGS', nodeEnv !== 'production'),
     pairingPhone: readPhone(env),
+    ownerJids: readOwnerJids(env),
+    commandPrefixes: readPrefixes(env),
     authDirectory: resolve(root, readString(env, 'AUTH_DIR', './data/auth')),
     sessionId: readString(env, 'SESSION_ID', 'primary'),
     pluginsDirectory: resolve(root, readString(env, 'PLUGINS_DIR', './src/plugins')),
@@ -84,6 +111,8 @@ export function loadConfig(env = process.env) {
     maxInboundBatch: readInteger(env, 'MAX_INBOUND_BATCH', 50, { min: 1, max: 500 }),
     maxPluginQueue: readInteger(env, 'MAX_PLUGIN_QUEUE', 100, { min: 1, max: 10000 }),
     maxPluginConcurrency: readInteger(env, 'MAX_PLUGIN_CONCURRENCY', 8, { min: 1, max: 128 }),
+    permissionTimeoutMs: readInteger(env, 'PERMISSION_TIMEOUT_MS', 5000, { min: 100, max: 60000 }),
+    groupMetadataTtlMs: readInteger(env, 'GROUP_METADATA_TTL_MS', 30000, { min: 1000, max: 600000 }),
     outboundGlobalPerSecond: readFloat(env, 'OUTBOUND_GLOBAL_PER_SECOND', 5, { min: 0.1, max: 1000 }),
     outboundPerChatPerSecond: readFloat(env, 'OUTBOUND_PER_CHAT_PER_SECOND', 0.5, { min: 0.01, max: 100 }),
     outboundQueueLimit: readInteger(env, 'OUTBOUND_QUEUE_LIMIT', 200, { min: 1, max: 10000 }),
@@ -93,6 +122,9 @@ export function loadConfig(env = process.env) {
     ffmpegTimeoutMs: readInteger(env, 'FFMPEG_TIMEOUT_MS', 30000, { min: 1000, max: 600000 }),
     maxStickerBytes: readInteger(env, 'MAX_STICKER_BYTES', 1048576, { min: 65536, max: 20 * 1024 * 1024 }),
     ffmpegPath: readString(env, 'FFMPEG_PATH') || null,
+    downloadMaxBytes: readInteger(env, 'DOWNLOAD_MAX_BYTES', 8 * 1024 * 1024, { min: 65536, max: 50 * 1024 * 1024 }),
+    downloadTimeoutMs: readInteger(env, 'DOWNLOAD_TIMEOUT_MS', 20000, { min: 1000, max: 120000 }),
+    economyDirectory: resolve(root, readString(env, 'ECONOMY_DIR', './data/economy')), 
   };
 
   if (!/^[a-zA-Z0-9._-]{1,64}$/.test(config.sessionId)) {

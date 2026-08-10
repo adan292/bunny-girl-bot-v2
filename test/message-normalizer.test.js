@@ -31,3 +31,60 @@ test('rejects invalid jid and text bombs', () => {
   assert.equal(textBomb.accepted, false);
   assert.equal(textBomb.reason, 'raw-text-too-large');
 });
+
+test('extracts command, quoted arguments, mentions and quote metadata', () => {
+  const result = normalizeIncomingMessage({
+    key: {
+      id: 'command-1',
+      remoteJid: '12025550123@g.us',
+      participant: '527711234567@s.whatsapp.net',
+    },
+    message: {
+      extendedTextMessage: {
+        text: '.download "https://example.com/file.jpg" @user',
+        contextInfo: {
+          mentionedJid: ['5511999999999@s.whatsapp.net'],
+          stanzaId: 'quoted-1',
+          participant: '5215555555555@s.whatsapp.net',
+          quotedMessage: {
+            conversation: 'mensaje citado',
+          },
+        },
+      },
+    },
+  });
+
+  assert.equal(result.accepted, true);
+  assert.equal(result.message.command, 'download');
+  assert.deepEqual(result.message.args, ['https://example.com/file.jpg', '@user']);
+  assert.deepEqual(result.message.mentions, ['5511999999999@s.whatsapp.net']);
+  assert.equal(result.message.quoted.id, 'quoted-1');
+  assert.equal(result.message.quoted.text, 'mensaje citado');
+  assert.equal(result.message.isGroup, true);
+});
+
+test('normalizes button and list responses as command input', () => {
+  const button = normalizeIncomingMessage({
+    key: { id: 'button-1', remoteJid: '527711234567@s.whatsapp.net' },
+    message: {
+      buttonsResponseMessage: {
+        selectedButtonId: '.bal',
+        selectedDisplayText: 'Consultar saldo',
+      },
+    },
+  });
+  const list = normalizeIncomingMessage({
+    key: { id: 'list-1', remoteJid: '527711234567@s.whatsapp.net' },
+    message: {
+      listResponseMessage: {
+        title: 'Economía',
+        singleSelectReply: { selectedRowId: '.daily' },
+      },
+    },
+  });
+
+  assert.equal(button.message.interactive.type, 'button');
+  assert.equal(button.message.command, 'bal');
+  assert.equal(list.message.interactive.type, 'list');
+  assert.equal(list.message.command, 'daily');
+});

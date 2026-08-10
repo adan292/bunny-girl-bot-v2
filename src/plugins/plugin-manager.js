@@ -4,8 +4,64 @@ import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PluginExecutionError } from '../utils/errors.js';
 
+const PERMISSIONS = new Set([
+  'user',
+  'admin',
+  'bot-admin',
+  'owner',
+]);
+
 function isPluginFile(name) {
   return typeof name === 'string' && name.endsWith('.plugin.js');
+}
+
+function normalizeCommandName(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const command = value
+    .trim()
+    .toLocaleLowerCase('en-US')
+    .replace(/^[./!]+/u, '');
+
+  return /^[\p{L}\p{N}_:-]{1,64}$/u.test(command)
+    ? command
+    : null;
+}
+
+function normalizeCommands(candidate) {
+  const values = [
+    candidate.command,
+    candidate.commands,
+    candidate.aliases,
+  ].flatMap((value) => Array.isArray(value) ? value : [value]);
+
+  return [...new Set(values
+    .map((value) => normalizeCommandName(value))
+    .filter(Boolean))];
+}
+
+function normalizePermissions(value) {
+  const values = value === undefined
+    ? []
+    : Array.isArray(value)
+      ? value
+      : [value];
+
+  const permissions = [...new Set(values.map((permission) => (
+    typeof permission === 'string'
+      ? permission.trim().toLocaleLowerCase('en-US')
+      : ''
+  )))];
+
+  for (const permission of permissions) {
+    if (!PERMISSIONS.has(permission)) {
+      throw new Error(`Unknown plugin permission: ${permission}`);
+    }
+  }
+
+  return permissions;
 }
 
 function validatePlugin(candidate, filePath) {
@@ -22,12 +78,20 @@ function validatePlugin(candidate, filePath) {
   }
 
   if (
-    typeof candidate.match !== 'function'
+    candidate.match !== undefined
+    && typeof candidate.match !== 'function'
     && typeof candidate.match !== 'string'
     && !(candidate.match instanceof RegExp)
   ) {
     throw new Error(
-      `Plugin ${filePath} requires match as function, string or RegExp`,
+      `Plugin ${filePath} match must be a function, string or RegExp`,
+    );
+  }
+
+  const commands = normalizeCommands(candidate);
+  if (commands.length === 0 && candidate.match === undefined) {
+    throw new Error(
+      `Plugin ${filePath} requires command(s) or match`,
     );
   }
 
@@ -39,12 +103,26 @@ function validatePlugin(candidate, filePath) {
   return Object.freeze({
     ...candidate,
     priority,
+    commands: Object.freeze(commands),
+    permissions: Object.freeze(normalizePermissions(candidate.permissions)),
+    silentDenied: candidate.silentDenied === true,
     filePath,
   });
 }
 
 async function matches(plugin, context) {
   const text = context?.message?.text ?? '';
+  const command = context?.message?.command;
+
+  if (plugin.commands.length > 0) {
+    if (plugin.commands.includes(command)) {
+      return true;
+    }
+
+    if (plugin.match === undefined) {
+      return false;
+    }
+  }
 
   if (typeof plugin.match === 'function') {
     return Boolean(await plugin.match(context));
@@ -54,8 +132,47 @@ async function matches(plugin, context) {
     return text === plugin.match;
   }
 
-  plugin.match.lastIndex = 0;
-  return plugin.match.test(text);
+  if (plugin.match instanceof RegExp) {
+    plugin.match.lastIndex = 0;
+    return plugin.match.test(text);
+  }
+
+  return false;
+}
+
+function permissionSatisfied(permission, permissions = {}) {
+  switch (permission) {
+    case 'user':
+      return permissions.user === true;
+    case 'admin':
+      return permissions.admin === true || permissions.owner === true;
+    case 'bot-admin':
+      return permissions.botAdmin === true;
+    case 'owner':
+      return permissions.owner === true;
+    default:
+      return false;
+  }
+}
+
+function hasRequiredPermissions(required, permissions) {
+  return required.every((permission) => permissionSatisfied(permission, permissions));
+}
+
+function permissionDenialText(required) {
+  if (required.includes('owner')) {
+    return 'Este comando requiere permisos de owner.';
+  }
+
+  if (required.includes('bot-admin')) {
+    return 'Necesito ser administrador del grupo para ejecutar este comando.';
+  }
+
+  if (required.includes('admin')) {
+    return 'Este comando requiere permisos de administrador.';
+  }
+
+  return 'No tienes permisos para ejecutar este comando.';
 }
 
 function pluginError(error, plugin, context, phase) {
@@ -70,19 +187,32 @@ function pluginError(error, plugin, context, phase) {
 }
 
 /**
- * Dynamic ESM plugin registry with hot reload and per-plugin error isolation.
- * A broken reload never replaces the last known-good module.
+ * Dynamic ESM plugin registry with hot reload, command matching and isolated
+ * permission/error boundaries.
  */
 export class PluginManager {
-  constructor({ directory, logger, watchEnabled = true, reloadDebounceMs = 100 } = {}) {
+  constructor({
+    directory,
+    logger,
+    watchEnabled = true,
+    reloadDebounceMs = 100,
+  } = {}) {
     if (typeof directory !== 'string' || directory.trim() === '') {
-      throw new TypeError('PluginManager directory must be a non-empty path');
+      throw new TypeError(
+        'PluginManager directory must be a non-empty path',
+      );
     }
+
     if (!logger || typeof logger.error !== 'function') {
-      throw new TypeError('PluginManager requires an error logger method');
+      throw new TypeError(
+        'PluginManager requires an error logger method',
+      );
     }
+
     if (!Number.isSafeInteger(reloadDebounceMs) || reloadDebounceMs < 0) {
-      throw new RangeError('reloadDebounceMs must be a non-negative integer');
+      throw new RangeError(
+        'reloadDebounceMs must be a non-negative integer',
+      );
     }
 
     this.directory = resolve(directory);
@@ -138,7 +268,10 @@ export class PluginManager {
 
     this.watcher = watch(
       this.directory,
-      { persistent: false, encoding: 'utf8' },
+      {
+        persistent: false,
+        encoding: 'utf8',
+      },
       (eventType, filename) => {
         if (this.closed || !filename) {
           return;
@@ -151,6 +284,7 @@ export class PluginManager {
 
         const filePath = resolve(this.directory, name);
         const previousTimer = this.reloadTimers.get(filePath);
+
         if (previousTimer) {
           clearTimeout(previousTimer);
         }
@@ -236,7 +370,10 @@ export class PluginManager {
 
     this.plugins.delete(existing.name);
     this.#sort();
-    this.logger.info?.({ plugin: basename(filePath) }, 'Plugin unloaded');
+
+    this.logger.info?.({
+      plugin: basename(filePath),
+    }, 'Plugin unloaded');
   }
 
   #sort() {
@@ -262,17 +399,40 @@ export class PluginManager {
         matched = await matches(plugin, context);
       } catch (error) {
         const normalized = pluginError(error, plugin, context, 'matcher');
+
         diagnostics?.pluginFailure?.({
           error: normalized,
           pluginName: plugin.name,
           messageId: context.message.id,
           jid: context.message.remoteJid,
         });
+
         continue;
       }
 
       if (!matched) {
         continue;
+      }
+
+      if (!hasRequiredPermissions(plugin.permissions, context.permissions)) {
+        if (!plugin.silentDenied && typeof context.reply === 'function') {
+          await context.reply({
+            text: plugin.deniedMessage ?? permissionDenialText(plugin.permissions),
+          }).catch((error) => {
+            diagnostics?.pluginFailure?.({
+              error: pluginError(error, plugin, context, 'permission-reply'),
+              pluginName: `${plugin.name}:permission-reply`,
+              messageId: context.message.id,
+              jid: context.message.remoteJid,
+            });
+          });
+        }
+
+        return {
+          handled: true,
+          denied: true,
+          plugin: plugin.name,
+        };
       }
 
       try {
@@ -332,6 +492,8 @@ export class PluginManager {
     return [...this.plugins.values()].map((plugin) => ({
       name: plugin.name,
       priority: plugin.priority,
+      commands: [...plugin.commands],
+      permissions: [...plugin.permissions],
       filePath: plugin.filePath,
     }));
   }
@@ -354,6 +516,9 @@ export class PluginManager {
 }
 
 export {
+  PERMISSIONS,
+  hasRequiredPermissions,
   isPluginFile,
+  normalizeCommandName,
   validatePlugin,
 };

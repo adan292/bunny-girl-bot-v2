@@ -13,8 +13,11 @@ La primera entrega construye el core limpio, sin copiar archivos ni sesiones del
 - Estado de autenticación propio, con cola serial, escritura temporal + `rename`, `fsync` y permisos restrictivos.
 - Supervisor de socket con una sola conexión activa, backoff exponencial con jitter y clasificación explícita de desconexiones.
 - Pipeline de plugins asíncrono y recargable en caliente, con aislamiento de errores por plugin.
-- Normalización de mensajes con límites de tamaño, eliminación de controles y protección contra cargas de texto extremas.
+- Normalización de mensajes con comandos, prefijos, argumentos, menciones, citas e interacciones de botones/listas.
+- Router con permisos de usuario, admin, bot-admin y owner mediante metadatos de grupos.
 - Cola de salida con token bucket global y por chat, límites de cola y backpressure.
+- Plugin de descargas HTTP(S) con validación SSRF básica, límites de bytes, redirects controlados y streams sin archivos temporales.
+- Plugin de economía con `.bal`, `.work` y `.daily`, cooldowns y persistencia atómica aislada.
 - Servidor HTTP de salud para despliegues.
 - Utilidad de media preparada para `fluent-ffmpeg`, `stream.pipeline`, `AbortSignal`, timeouts estrictos y `node-webpmux`.
 - Pruebas unitarias de las piezas que no requieren una cuenta de WhatsApp ni un binario FFmpeg.

@@ -73,6 +73,9 @@ async function main() {
   });
 
   router = new MessageRouter({
+    config,
+    ownerJids: config.ownerJids,
+    permissionTimeoutMs: config.permissionTimeoutMs,
     pluginManager,
     outboundQueue,
     diagnostics,
@@ -81,6 +84,7 @@ async function main() {
     maxBatch: config.maxInboundBatch,
     concurrency: config.maxPluginConcurrency,
     maxQueue: config.maxPluginQueue,
+    prefixes: config.commandPrefixes,
   });
 
   supervisor = new ConnectionSupervisor({
