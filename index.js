@@ -128,7 +128,7 @@ async function startBot() {
   }
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr && authMethod !== "code") {
+    if (qr && authMethod === "qr") {
       console.log("\n📱 Escanea el QR con WhatsApp:\n");
       qrcode.generate(qr, { small: true });
     }
