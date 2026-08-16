@@ -68,9 +68,13 @@ async function chooseAuthMethod() {
   console.log("Elige cómo vincular tu WhatsApp:\n");
   console.log("  [1] Código QR (escanear con el teléfono)");
   console.log("  [2] Código de 8 dígitos (vincular con número de teléfono)\n");
+  if (config.authMethod === "qr" || config.authMethod === "code") {
+    console.log(`(AUTH_METHOD configurado → usando opción ${config.authMethod === "code" ? "2: código de 8 dígitos" : "1: QR"})`);
+    return config.authMethod;
+  }
   if (!isTTY) {
     const method = config.pairingPhone ? "code" : "qr";
-    console.log(`(Sin terminal interactiva → usando opción ${method === "code" ? "2: código de 8 dígitos" : "1: QR"})`);
+    console.log(`(Sin terminal interactiva → usando opción ${method === "code" ? "2: código de 8 dígitos" : "1: QR"}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
     return method;
   }
   let choice;

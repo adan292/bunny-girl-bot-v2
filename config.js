@@ -5,6 +5,7 @@ module.exports = {
   owner: (process.env.OWNER_NUMBER || "").replace(/\D/g, ""),
   phoneNumber: (process.env.PHONE_NUMBER || "").replace(/\D/g, ""),
   pairingPhone: (process.env.PAIRING_PHONE || "").replace(/\D/g, ""),
+  authMethod: (process.env.AUTH_METHOD || "").toLowerCase(),
   port: Number(process.env.PORT || 3000),
   botName: process.env.BOT_NAME || "Bunny Bot",
   version: "2.1.0",
