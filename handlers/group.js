@@ -151,3 +151,77 @@ async function execute(sock, msg, command, args, prefix) {
 }
 
 module.exports = { execute, text, mentioned, target, isUrl };
+// ===============================
+// #warn
+// ===============================
+if (command === "warn") {
+    if (!isGroup) {
+        return await sock.sendMessage(from, {
+            text: "❌ Este comando solo funciona en grupos."
+        });
+    }
+
+    if (!isAdmin) {
+        return await sock.sendMessage(from, {
+            text: "❌ Solo los administradores pueden usar #warn."
+        });
+    }
+
+    const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+
+    if (!mentioned.length) {
+        return await sock.sendMessage(from, {
+            text: "⚠️ Debes mencionar a un usuario.\n\nEjemplo:\n#warn @usuario"
+        });
+    }
+
+    const target = mentioned[0];
+
+    if (!global.warns) global.warns = {};
+
+    const key = `${from}:${target}`;
+
+    if (!global.warns[key]) {
+        global.warns[key] = 0;
+    }
+
+    global.warns[key]++;
+
+    const warns = global.warns[key];
+
+    if (warns >= 3) {
+        try {
+            await sock.groupParticipantsUpdate(
+                from,
+                [target],
+                "remove"
+            );
+
+            delete global.warns[key];
+
+            return await sock.sendMessage(from, {
+                text: `🚨 @${target.split("@")[0]} recibió su tercera advertencia y fue expulsado del grupo.`,
+                mentions: [target]
+            });
+        } catch (error) {
+            console.error("Error expulsando usuario:", error);
+
+            return await sock.sendMessage(from, {
+                text: "❌ No pude expulsar al usuario. Comprueba que el bot sea administrador."
+            });
+        }
+    }
+
+    await sock.sendMessage(from, {
+        text:
+`⚠️ *ADVERTENCIA*
+
+👤 Usuario: @${target.split("@")[0]}
+⚠️ Advertencias: ${warns}/3
+
+${warns === 1
+    ? "Primer aviso."
+    : "Ten cuidado. Al llegar a 3 advertencias serás expulsado."}`,
+        mentions: [target]
+    });
+}
