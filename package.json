@@ -3,12 +3,18 @@
   "version": "2.2.0",
   "description": "Bunny Bot V2 con IA conversacional, administración, economía, RPG y juegos.",
   "main": "index.js",
-  "scripts": { "start": "node index.js", "dev": "node --watch index.js" },
-  "engines": { "node": ">=18.17.0" },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.18",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "figlet": "^1.11.4",
     "pino": "^9.6.0",
     "qrcode-terminal": "^0.12.0"
   }
