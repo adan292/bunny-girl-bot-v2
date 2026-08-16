@@ -225,3 +225,66 @@ ${warns === 1
         mentions: [target]
     });
 }
+// ===============================
+// DETECTOR ANTILINK
+// ===============================
+async function checkAntiLink(sock, msg) {
+try {
+const from = msg.key.remoteJid;
+
+if (!from || !from.endsWith("@g.us")) return;  
+
+    if (!global.antilink?.[from]) return;  
+
+    const text =  
+        msg.message?.conversation ||  
+        msg.message?.extendedTextMessage?.text ||  
+        "";  
+
+    const linkRegex =  
+        /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[^\s]+)/i;  
+
+    if (!linkRegex.test(text)) return;  
+
+    const sender = msg.key.participant || msg.participant;  
+
+    if (!sender) return;  
+
+    const metadata = await sock.groupMetadata(from);  
+
+    const participant = metadata.participants.find(  
+        p => p.id === sender  
+    );  
+
+    // Los administradores pueden enviar enlaces  
+    if (  
+        participant?.admin === "admin" ||  
+        participant?.admin === "superadmin"  
+    ) {  
+        return;  
+    }  
+
+    try {  
+        await sock.sendMessage(from, {  
+            delete: msg.key  
+        });  
+    } catch (e) {  
+        console.log("No se pudo eliminar el enlace:", e);  
+    }  
+
+    await sock.sendMessage(from, {  
+        text:
+
+`🔗⚠️ ANTILINK
+
+@${sender.split("@")[0]}, los enlaces no están permitidos en este grupo.
+
+🗑️ Mensaje eliminado.`,
+mentions: [sender]
+});
+
+} catch (error) {  
+    console.error("Error AntiLink:", error);  
+}
+
+}
