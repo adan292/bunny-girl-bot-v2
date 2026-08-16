@@ -57,6 +57,14 @@ function readPhone(env) {
   return raw ? normalizePhoneNumber(raw) : null;
 }
 
+function readPairingMode(env) {
+  const raw = readString(env, 'PAIRING_MODE', 'phone').toLowerCase();
+  if (!['qr', 'phone'].includes(raw)) {
+    throw new Error('PAIRING_MODE must be "qr" or "phone"');
+  }
+  return raw;
+}
+
 function readOwnerJids(env) {
   const raw = readString(env, 'OWNER_JIDS');
   if (!raw) {
@@ -101,6 +109,7 @@ export function loadConfig(env = process.env) {
     logLevel: readString(env, 'LOG_LEVEL', 'info'),
     prettyLogs: readBoolean(env, 'PRETTY_LOGS', nodeEnv !== 'production'),
     pairingPhone: readPhone(env),
+    pairingMode: readPairingMode(env),
     ownerJids: readOwnerJids(env),
     commandPrefixes: readPrefixes(env),
     authDirectory: resolve(root, readString(env, 'AUTH_DIR', './data/auth')),

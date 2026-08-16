@@ -1,5 +1,6 @@
 import makeWASocket, { Browsers } from '@whiskeysockets/baileys';
 import { join } from 'node:path';
+import qrcode from 'qrcode-terminal';
 import { createAtomicFileAuthState } from '../auth/atomic-file-auth-state.js';
 import { computeReconnectDelay } from './reconnect-policy.js';
 import {
@@ -343,9 +344,14 @@ export class ConnectionSupervisor {
     }
 
     if (update.qr && !this.authState?.state.creds.registered) {
-      this.logger.warn(
-        'Baileys emitted a QR but QR output is disabled; configure PAIRING_PHONE for pairing-code authentication',
-      );
+      if (this.config.pairingMode === 'qr') {
+        this.logger.info('📱 Escanea el código QR con WhatsApp: Dispositivos vinculados → Vincular un dispositivo');
+        qrcode.generate(update.qr, { small: true });
+      } else {
+        this.logger.warn(
+          'Baileys emitted a QR but QR output is disabled; configure PAIRING_PHONE for pairing-code authentication',
+        );
+      }
     }
   }
 
@@ -355,6 +361,10 @@ export class ConnectionSupervisor {
       || this.authState.state.creds.registered
       || this.pairingSockets.has(socket)
     ) {
+      return;
+    }
+
+    if (this.config.pairingMode === 'qr') {
       return;
     }
 
