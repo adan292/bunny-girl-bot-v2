@@ -73,9 +73,16 @@ async function chooseAuthMethod() {
     return config.authMethod;
   }
   if (!isTTY) {
-    const method = config.pairingPhone ? "code" : "qr";
-    console.log(`(Sin terminal interactiva → usando opción ${method === "code" ? "2: código de 8 dígitos" : "1: QR"}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
-    return method;
+    const method = config.authMethod === "code" ? "code" : config.authMethod === "qr" ? "qr" : config.pairingPhone ? "code" : null;
+    if (method) {
+      console.log(`(Sin terminal interactiva → usando opción ${method === "code" ? "2: código de 8 dígitos" : "1: QR"}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
+      return method;
+    }
+    console.log("⚠️ Sin terminal interactiva y sin AUTH_METHOD. NO se lanzará QR.\n");
+    console.log("Para elegir, configura en .env:");
+    console.log("  AUTH_METHOD=code  → código de 8 dígitos (con PAIRING_PHONE)");
+    console.log("  AUTH_METHOD=qr    → código QR\n");
+    process.exit(1);
   }
   let choice;
   while (choice !== "1" && choice !== "2") {
@@ -135,6 +142,8 @@ async function startBot() {
     if (qr && authMethod === "qr") {
       console.log("\n📱 Escanea el QR con WhatsApp:\n");
       qrcode.generate(qr, { small: true });
+    } else if (qr) {
+      console.log("(QR recibido, ignorado: no se eligió la opción 1)");
     }
     if (connection === "open") {
       reconnecting = false;
