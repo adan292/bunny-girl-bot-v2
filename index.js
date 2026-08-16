@@ -2,8 +2,11 @@ const {
   default: makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
-  fetchLatestBaileysVersion
+  fetchLatestBaileysVersion,
+  Browsers
 } = require("@whiskeysockets/baileys");
+const fs = require("fs");
+const path = require("path");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const express = require("express");
@@ -49,11 +52,25 @@ async function startBot() {
     ...(version ? { version } : {}),
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: [config.botName, "Chrome", config.version],
+    browser: Browsers.windows("Chrome"),
     markOnlineOnConnect: false
   });
 
   sock.ev.on("creds.update", saveCreds);
+
+  const paired = fs.existsSync(path.join(__dirname, "auth", "creds.json"));
+  if (!paired && config.pairingPhone) {
+    setTimeout(async () => {
+      try {
+        const code = await sock.requestPairingCode(config.pairingPhone);
+        const clean = code.match(/.{1,4}/g)?.join("-") || code;
+        console.log(`\n🔢 Código de vinculación para ${config.pairingPhone}: ${clean}`);
+        console.log("👉 En WhatsApp: Ajustes → Dispositivos vinculados → Vincular un dispositivo → Vincular con número de teléfono.\n");
+      } catch (e) {
+        console.error("❌ No se pudo generar el código de vinculación:", e.message);
+      }
+    }, 3000);
+  }
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
     if (qr) {
@@ -66,6 +83,7 @@ async function startBot() {
     }
     if (connection === "close") {
       const code = lastDisconnect?.error?.output?.statusCode;
+      console.warn(`⚠️ Conexión cerrada. StatusCode: ${code ?? "desconocido"}`, lastDisconnect?.error?.message ? `(${lastDisconnect.error.message})` : "");
       if (code === DisconnectReason.loggedOut) {
         console.log("🔐 Sesión cerrada. Elimina ./auth y vuelve a vincular.");
         return;
