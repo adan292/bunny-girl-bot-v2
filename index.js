@@ -1,166 +1,210 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
-import { config as loadDotenv } from 'dotenv';
-import figlet from 'figlet';
-import { validatePairingPhone } from './src/utils/phone-validation.js';
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  fetchLatestBaileysVersion
+} = require("@whiskeysockets/baileys");
+const pino = require("pino");
+const qrcode = require("qrcode-terminal");
+const express = require("express");
 
-const root = dirname(fileURLToPath(import.meta.url));
+const config = require("./config");
+const db = require("./database");
+const { calculateLevel, isUrl, jidNumber } = require("./utils");
+const { frase } = require("./frases");
+const commands = require("./handlers/commands");
+const groupHandler = require("./handlers/group");
+const economy = require("./lib/economy");
+const { askAI } = require("./lib/ai");
 
-const envPath = join(root, '.env');
-if (existsSync(envPath)) {
-  loadDotenv({ path: envPath });
+const app = express();
+app.get("/", (_, res) => res.send("🐰 Bunny Bot V2 online."));
+app.get("/health", (_, res) => res.json({ ok: true, version: config.version }));
+app.listen(config.port, () => console.log(`🌐 Health server en ${config.port}`));
+
+let reconnecting = false;
+let sock;
+const aiHistory = new Map();
+
+function pushAIHistory(jid, role, content) {
+  const history = aiHistory.get(jid) || [];
+  history.push({ role, content });
+  aiHistory.set(jid, history.slice(-8));
 }
 
-const readline = createInterface({ input: process.stdin, output: process.stdout });
+function stripBotMention(text) {
+  return text.replace(/@?bunny\s*/ig, "").trim();
+}
 
-function ask(question) {
-  return new Promise((resolve) => {
-    readline.question(question, (answer) => resolve(answer.trim()));
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState("./auth");
+  let version;
+  try {
+    ({ version } = await fetchLatestBaileysVersion());
+  } catch (e) {
+    console.warn("⚠️ No se pudo consultar la versión de Baileys; usando la predeterminada.");
+  }
+
+  sock = makeWASocket({
+    ...(version ? { version } : {}),
+    auth: state,
+    logger: pino({ level: "silent" }),
+    browser: [config.botName, "Chrome", config.version],
+    markOnlineOnConnect: false
+  });
+
+  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+    if (qr) {
+      console.log("\n📱 Escanea el QR con WhatsApp:\n");
+      qrcode.generate(qr, { small: true });
+    }
+    if (connection === "open") {
+      reconnecting = false;
+      console.log(`🐰 ${config.botName} conectado.`);
+    }
+    if (connection === "close") {
+      const code = lastDisconnect?.error?.output?.statusCode;
+      if (code === DisconnectReason.loggedOut) {
+        console.log("🔐 Sesión cerrada. Elimina ./auth y vuelve a vincular.");
+        return;
+      }
+      if (!reconnecting) {
+        reconnecting = true;
+        setTimeout(startBot, 3000);
+      }
+    }
+  });
+
+  sock.ev.on("messages.upsert", async ({ messages }) => {
+    for (const msg of messages) {
+      try {
+        await handleMessage(msg);
+      } catch (e) {
+        console.error("❌ Error:", e);
+      }
+    }
+  });
+
+  sock.ev.on("group-participants.update", async ({ id, participants, action }) => {
+    try {
+      const g = db.getGroup(id);
+      if (!g[action === "add" ? "welcome" : "goodbye"]) return;
+      for (const p of participants) {
+        const t = action === "add" ? frase("welcome", "@" + jidNumber(p)) : frase("goodbye", "@" + jidNumber(p));
+        await sock.sendMessage(id, { text: t, mentions: [p] });
+      }
+    } catch (e) {
+      console.error("❌ Evento de grupo:", e);
+    }
   });
 }
 
-function closePrompt() {
-  readline.close();
+function getText(msg) {
+  return commands.getText(msg);
 }
 
-let version = '0.0.0';
-try {
-  version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
-} catch {}
+async function handleMessage(msg) {
+  if (!msg.message || msg.key.fromMe) return;
+  const jid = msg.key.remoteJid;
+  if (!jid) return;
 
-function printBanner() {
-  const title = figlet.textSync('Bunny Girl Bot', { font: 'Standard' });
-  console.log(title);
-  console.log([
-    '   Versión     : ' + version,
-    '   Node        : ' + process.version,
-    '   NODE_ENV    : ' + (process.env.NODE_ENV ?? 'development'),
-    '   Puerto HTTP : ' + (process.env.PORT ?? 3000),
-  ].join('\n'));
-}
+  const sender = msg.key.participant || jid;
+  const text = getText(msg);
+  if (!text) return;
 
-function printOwners() {
-  const owners = (process.env.OWNER_JIDS ?? '')
-    .split(',')
-    .map((owner) => owner.trim())
-    .filter(Boolean);
+  const isGroup = jid.endsWith("@g.us");
 
-  if (owners.length > 0) {
-    console.log('   👑 Owners     : ' + owners.join(', '));
-  } else {
-    console.warn('   ⚠️ Sin owners configurados: define OWNER_JIDS en .env');
-  }
-}
-
-function explainNumberFormat() {
-  console.log('\n   📱 Cómo colocar el número de teléfono:');
-  console.log('   Escribe el número CON código de país, sin "+", sin espacios ni guiones.');
-  console.log('   Ejemplo Venezuela: 584242773183   (58 + 4242773183)');
-  console.log('   Ejemplo México   : 527711234567   (52 + 7711234567)');
-  console.log('   Solo dígitos, entre 8 y 15. Un número local sin código de país se rechaza.\n');
-}
-
-async function choosePairingMode() {
-  console.log('\n   ───────────────────────────────────────────────');
-  console.log('   Modo de vinculación con WhatsApp:');
-  console.log('   [1] Escanear código QR (Dispositivos vinculados)');
-  console.log('   [2] Usar número de teléfono (código de vinculación)');
-  console.log('   ───────────────────────────────────────────────');
-
-  while (true) {
-    const choice = await ask('   Elige una opción (1 o 2): ');
-    if (choice === '1') {
-      console.log('   📱 Modo QR: escanea el código que aparecerá con WhatsApp.\n');
-      return 'qr';
+  // 🤖 En privado Bunny puede conversar sin prefijo. En grupos responde al mencionarla.
+  const botNumber = sock.user?.id ? jidNumber(sock.user.id) : "";
+  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+  const mentionedBot = mentioned.some(x => jidNumber(x) === botNumber);
+  const mentionText = stripBotMention(text);
+  if (config.aiEnabled && !text.startsWith(config.prefix) && ((isGroup && mentionedBot) || (!isGroup && config.aiAutoPrivate))) {
+    const prompt = mentionText || text;
+    const history = aiHistory.get(jid) || [];
+    const result = await askAI(prompt, history);
+    if (result.ok) {
+      pushAIHistory(jid, "user", prompt);
+      pushAIHistory(jid, "assistant", result.text);
+      await sock.sendMessage(jid, { text: `🐰🤖 ${result.text}`, mentions: [sender] });
+    } else {
+      await sock.sendMessage(jid, { text: result.message });
     }
-    if (choice === '2') {
-      return 'phone';
-    }
-    console.log('   ⚠️ Opción inválida: escribe 1 o 2.');
-  }
-}
-
-async function collectPhoneNumber() {
-  explainNumberFormat();
-
-  while (true) {
-    const raw = await ask('   📞 Número de teléfono: ');
-    if (!raw) {
-      console.log('   ⚠️ No escribiste ningún número. Inténtalo de nuevo.');
-      continue;
-    }
-
-    const result = validatePairingPhone(raw);
-    if (!result.ok) {
-      console.log(`   🔴 Número rechazado: ${result.reason}`);
-      console.log('      Recuerda el formato: código de país + número, sin "+" ni espacios.');
-      continue;
-    }
-
-    const country = result.countryName
-      ? ` (${result.countryName})`
-      : '';
-    console.log(`   🟢 Número válido: ${result.normalized}${country}`);
-    for (const warning of result.warnings) {
-      console.log(`   🟡 Aviso: ${warning}`);
-    }
-    console.log('      El código de vinculación aparecerá en el log del bot.\n');
-
-    const confirm = await ask('   ¿Vincular con este número? (s/n): ');
-    if (confirm.toLowerCase() === 's') {
-      return result.normalized;
-    }
-    console.log('   Reintentando...\n');
-  }
-}
-
-async function preparePairing() {
-  const authDirectory = join(root, process.env.AUTH_DIR ?? 'data/auth');
-  const hasSession = existsSync(join(authDirectory, 'creds.json'));
-
-  if (hasSession) {
-    console.log('   🔑 Sesión de WhatsApp encontrada, iniciando sesión...\n');
     return;
   }
 
-  if (process.env.PAIRING_PHONE) {
-    console.log(`   🔗 Sesión guardada en PAIRING_PHONE: ${process.env.PAIRING_PHONE}`);
-    console.log('   (Para cambiarlo, edita el valor en .env o borra ./data/auth)\n');
-    return;
+  // XP por actividad.
+  const u = db.getUser(sender);
+  if (Date.now() - u.lastXpAt > 60000) {
+    const gain = 5 + Math.floor(Math.random() * 11);
+    const old = calculateLevel(u.xp);
+    const newXp = u.xp + gain;
+    const level = calculateLevel(newXp);
+    db.updateUser(sender, {
+      xp: newXp,
+      level: level.level,
+      lastXpAt: Date.now(),
+      stats: { ...u.stats, messages: u.stats.messages + 1 }
+    });
+    if (level.level > old.level) {
+      await sock.sendMessage(jid, {
+        text: `🎉 ¡${"@" + jidNumber(sender)} subió al nivel *${level.level}*!`,
+        mentions: [sender]
+      });
+    }
   }
 
-  const mode = await choosePairingMode();
+  // Moderación automática.
+  if (isGroup) {
+    const g = db.getGroup(jid);
+    const admin = await isAdmin(jid, sender);
 
-  if (mode === 'qr') {
-    process.env.PAIRING_MODE = 'qr';
-    console.log('   ✅ Modo QR activado.\n');
-    return;
+    if (!admin && !text.startsWith(config.prefix)) {
+      if (g.antilink && isUrl(text)) {
+        try { await sock.sendMessage(jid, { delete: msg.key }); } catch {}
+        await sock.sendMessage(jid, {
+          text: `🚫 ${"@" + jidNumber(sender)}, los enlaces no están permitidos.`,
+          mentions: [sender]
+        });
+        return;
+      }
+
+      if (g.antiparoles && g.blockedWords.some(w => text.toLowerCase().includes(w))) {
+        try { await sock.sendMessage(jid, { delete: msg.key }); } catch {}
+        await sock.sendMessage(jid, {
+          text: `🚫 ${"@" + jidNumber(sender)}, esa palabra está prohibida en este grupo.`,
+          mentions: [sender]
+        });
+        return;
+      }
+    }
   }
 
-  const phone = await collectPhoneNumber();
-  process.env.PAIRING_MODE = 'phone';
-  process.env.PAIRING_PHONE = phone;
+  if (!text.startsWith(config.prefix)) return;
+
+  const body = text.slice(config.prefix.length).trim();
+  if (!body) return;
+
+  const parts = body.split(/\s+/);
+  const command = parts.shift().toLowerCase();
+  const args = parts;
+
+  await commands.execute(sock, msg, command, args, config);
 }
 
-async function main() {
-  printBanner();
-  printOwners();
-  await preparePairing();
-  closePrompt();
-
+async function isAdmin(jid, user) {
   try {
-    await import(join(root, 'src', 'main.js'));
-  } catch (error) {
-    console.error('   ❌ Error fatal al iniciar el bot:', error);
-    process.exit(1);
+    const meta = await sock.groupMetadata(jid);
+    const p = meta.participants.find(x => x.id === user);
+    return !!p?.admin;
+  } catch {
+    return false;
   }
 }
 
-try {
-  await main();
-} catch (error) {
-  console.error('   ❌ Error al iniciar el bot:', error);
+startBot().catch(e => {
+  console.error("❌ Error fatal:", e);
   process.exit(1);
-}
+});
