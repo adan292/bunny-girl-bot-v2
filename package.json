@@ -4,7 +4,7 @@
   "private": false,
   "description": "Resilient ESM WhatsApp Multi-Device bot framework built on Baileys.",
   "type": "module",
-  "main": "src/main.js",
+  "main": "index.js",
   "scripts": {
     "start": "node src/main.js",
     "dev": "node --watch src/main.js",
