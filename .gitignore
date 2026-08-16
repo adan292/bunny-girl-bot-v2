@@ -1,11 +1,5 @@
 node_modules/
+auth/
+data/*.json
 .env
-.env.*
-!.env.example
-data/
 *.log
-npm-debug.log*
-.DS_Store
-coverage/
-.vscode/
-.idea/
