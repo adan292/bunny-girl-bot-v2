@@ -277,34 +277,100 @@ ${prefix}restart • ${prefix}broadcast texto`);
     return reply(`${frase("ship")}\n\n💘 Compatibilidad: *${randomInt(0,100)}%*`, [t]);
   }
 
-  // 🤖 IA
-  if (command === "ia" || command === "ai" || command === "bunny") {
+  // ==========================================
+// 🤖 BUNNY IA
+// ==========================================
+
+if (
+    command === "ia" ||
+    command === "ai" ||
+    command === "bunny"
+) {
+
     const prompt = args.join(" ").trim();
-    if (!prompt) return reply(`🤖 *BUNNY IA*\n\nPregúntame algo o dime qué necesitas.\n\nEjemplo:\n${prefix}ia explícame qué es JavaScript\n${prefix}ia crea un comando para mi bot`);
-    await reply("🤖 Bunny está pensando...");
-    const result = await askAI(prompt);
-    return reply(result.ok ? `🐰🤖 *Bunny IA*\n\n${result.text}` : result.message);
-  }
 
-  if (command === "restart" || command === "broadcast") {
-    if (jidNumber(sender) !== config.owner) return reply("👑 Comando reservado para el owner.");
-    if (command === "broadcast") {
-      const msgText = args.join(" ").trim();
-      if (!msgText) return reply(`Uso: ${prefix}broadcast texto`);
-      const groups = await sock.groupFetchAllParticipating();
-      let count = 0;
-      for (const g of Object.keys(groups)) {
-        await sock.sendMessage(g, { text: `📢 *BUNNY BOT*\n\n${msgText}` });
-        count++;
-      }
-      return reply(`📢 Broadcast enviado a ${count} grupos.`);
+    if (!prompt) {
+        return reply(
+`🤖 *BUNNY IA*
+
+¡Hola! 🐰 Soy Bunny, tu asistente de IA.
+
+Puedes preguntarme prácticamente cualquier cosa.
+
+📚 *Ejemplos:*
+
+${prefix}ia ¿Qué es JavaScript?
+
+${prefix}ia explícame HTML
+
+${prefix}ia crea un juego en HTML
+
+${prefix}ia ayúdame a programar un bot
+
+${prefix}ia resuelve esta operación
+
+${prefix}ia dame ideas para un proyecto
+
+🧠 También puedo mantener el contexto de nuestra conversación.
+
+🧹 Para borrar mi memoria:
+${prefix}iareset`
+        );
     }
-    await reply("🔄 Reiniciando Bunny Bot...");
-    setTimeout(() => process.exit(0), 1000);
-    return;
-  }
 
-  return reply(`🐰 No conozco ese comando. Usa ${prefix}menu.`);
+    const chatId = jid;
+
+    const history = getHistory(chatId);
+
+    await reply("🤖 Bunny está pensando...");
+
+    const result = await askAI(
+        prompt,
+        history
+    );
+
+    if (!result.ok) {
+        return reply(result.message);
+    }
+
+    // Guardar pregunta
+    addToHistory(
+        chatId,
+        "user",
+        prompt
+    );
+
+    // Guardar respuesta
+    addToHistory(
+        chatId,
+        "assistant",
+        result.text
+    );
+
+    return reply(
+`🐰🤖 *BUNNY IA*
+
+${result.text}`
+    );
 }
 
-module.exports = { execute, getText };
+
+// ==========================================
+// 🧹 BORRAR MEMORIA DE IA
+// ==========================================
+
+if (
+    command === "iareset" ||
+    command === "resetia"
+) {
+
+    clearHistory(jid);
+
+    return reply(
+`🧹 *MEMORIA BORRADA*
+
+He eliminado el historial de conversación de este chat.
+
+🐰🤖 Podemos comenzar de nuevo.`
+    );
+}
