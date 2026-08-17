@@ -4,7 +4,12 @@ const { mention, jidNumber, randomInt, pick, calculateLevel, msLeft, formatTime 
 const economy = require("../lib/economy");
 const games = require("../lib/game");
 const rpg = require("../lib/rpg");
-const { askAI } = require("../lib/ai");
+const {
+    askAI,
+    getHistory,
+    addToHistory,
+    clearHistory
+} = require("../lib/ai");
 const { sendInteraction } = require("../lib/interactions");
 const group = require("./group");
 
