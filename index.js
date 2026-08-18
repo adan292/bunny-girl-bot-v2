@@ -32,6 +32,8 @@ app.listen(config.port, () => console.log(`🌐 Health server en ${config.port}`
 let reconnecting = false;
 let wasConnected = false;
 let authMethod = null;
+let currentCode = null;
+let codeExpiryTimer = null;
 let sock;
 const aiHistory = new Map();
 
@@ -115,6 +117,22 @@ async function resolvePairingPhone() {
   return raw.replace(/\D/g, "");
 }
 
+function scheduleCodeExpiry() {
+  if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
+  codeExpiryTimer = setTimeout(() => {
+    if (!currentCode) return;
+    console.log(`⏰ El código ${currentCode} expiró. Generando uno nuevo...\n`);
+    currentCode = null;
+    try {
+      sock?.end?.(new Error("pairing-code-expired"));
+    } catch {}
+    if (!reconnecting) {
+      reconnecting = true;
+      setTimeout(startBot, 4000);
+    }
+  }, 55000);
+}
+
 async function startBot() {
   reconnecting = false;
   if (authMethod === null) authMethod = await chooseAuthMethod();
@@ -143,8 +161,10 @@ async function startBot() {
         try {
           const code = await sock.requestPairingCode(phone);
           const clean = code.match(/.{1,4}/g)?.join("-") || code;
+          currentCode = clean;
           console.log(`\n🔢 Código de vinculación para ${phone}: ${clean}`);
           console.log("👉 En WhatsApp: Ajustes → Dispositivos vinculados → Vincular un dispositivo → Vincular con número de teléfono.\n");
+          scheduleCodeExpiry();
         } catch (e) {
           console.error("❌ No se pudo generar el código de vinculación:", e.message);
         }
@@ -164,6 +184,8 @@ async function startBot() {
     if (connection === "open") {
       reconnecting = false;
       wasConnected = true;
+      currentCode = null;
+      if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
       console.log(`🐰 ${config.botName} conectado.`);
     }
     if (connection === "close") {
@@ -173,9 +195,20 @@ async function startBot() {
         console.log("🔐 Sesión cerrada. Elimina ./auth y vuelve a vincular.");
         return;
       }
+      if (!wasConnected) {
+        if (currentCode) {
+          console.log(`⏸ Esperando a que expire el código ${currentCode} para generar uno nuevo...`);
+          return;
+        }
+        if (!reconnecting) {
+          reconnecting = true;
+          setTimeout(startBot, 3000);
+        }
+        return;
+      }
       if (!reconnecting) {
         reconnecting = true;
-        console.log("↻ Reintentando vinculación/conexión en 3s... (imprimirá un código nuevo en cada intento)");
+        console.log("↻ Reintentando conexión en 3s...");
         setTimeout(startBot, 3000);
       }
     }
