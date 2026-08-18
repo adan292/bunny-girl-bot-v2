@@ -187,6 +187,7 @@ async function startBot() {
       currentCode = null;
       if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
       console.log(`🐰 ${config.botName} conectado.`);
+      console.log(`⚙️ Config: prefix=${JSON.stringify(config.prefix)} aiEnabled=${config.aiEnabled} aiAutoPrivate=${config.aiAutoPrivate} owner=${config.owner}`);
     }
     if (connection === "close") {
       const code = lastDisconnect?.error?.output?.statusCode;
@@ -217,6 +218,8 @@ async function startBot() {
   sock.ev.on("messages.upsert", async ({ messages }) => {
     for (const msg of messages) {
       try {
+        const txt = getText(msg);
+        console.log(`📩 Mensaje de [${msg.key.remoteJid}] ${msg.key.fromMe ? "(fromMe/propio)" : ""}: ${txt ? JSON.stringify(txt) : "(sin texto)"}`);
         await handleMessage(msg);
       } catch (e) {
         console.error("❌ Error:", e);
