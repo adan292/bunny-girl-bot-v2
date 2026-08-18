@@ -1,403 +1,356 @@
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  Browsers
-} = require("Baileys-Ruby");
-const fs = require("fs");
-const path = require("path");
-const readline = require("node:readline/promises");
-const { stdin, stdout, isTTY } = process;
-const pino = require("pino");
-const qrcode = require("qrcode-terminal");
-const figlet = require("figlet");
-const express = require("express");
+import "./settings.js";
+import main from '#main';
+import events from '#events';
+import makeWASocket, { Browsers, makeCacheableSignalKeyStore, useMultiFileAuthState, fetchLatestBaileysVersion, jidDecode, DisconnectReason } from 'baileys';
+import pino from "pino";
+import qrcode from "qrcode-terminal";
+import chalk from "chalk";
+import cfonts from "cfonts";
+import fs from "fs";
+import path from "path";
+import readlineSync from "readline-sync";
+import { smsg, getCachedMeta, setCachedMeta, deleteCachedMeta, patchGroupMetadata } from "#serialize";
+import cmdsLoader from '#system/cmdsLoader';
+import "#system/database";
+import { startSubBot } from './cmds/socket/subs.js';
+import db from '#db';
+import NodeCache from "node-cache";
 
-const config = require("./config");
-const db = require("./database");
-const { calculateLevel, isUrl, jidNumber } = require("./utils");
-const { frase } = require("./frases");
-const commands = require("./handlers/commands");
-const { checkAntiLink } = require("./handlers/group");
-const groupHandler = require("./handlers/group");
-const economy = require("./lib/economy");
-const { askAI } = require("./lib/ai");
+const log = {
+  info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
+  success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
+  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(`WARNING`), chalk.yellow(msg)),
+  error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg))
+};
 
-const app = express();
-app.get("/", (_, res) => res.send("🐰 Bunny Bot V2 online."));
-app.get("/health", (_, res) => res.json({ ok: true, version: config.version }));
-app.listen(config.port, () => console.log(`🌐 Health server en ${config.port}`));
-
-let reconnecting = false;
-let wasConnected = false;
-let authMethod = null;
-let currentCode = null;
-let codeExpiryTimer = null;
-let sock;
-const aiHistory = new Map();
-
-function pushAIHistory(jid, role, content) {
-  const history = aiHistory.get(jid) || [];
-  history.push({ role, content });
-  aiHistory.set(jid, history.slice(-8));
+let phoneNumber = "";
+let phoneInput = "";
+const methodCodeQR = process.argv.includes("--qr");
+const methodCode = process.argv.includes("code");
+function normalizePhone(input) {
+  let s = String(input).replace(/\D/g, '');
+  if (!s) return '';
+  if (s.startsWith('0')) s = s.replace(/^0+/, '');
+  if (s.length === 10 && s.startsWith('3')) s = '57' + s;
+  if (s.startsWith('52') && !s.startsWith('521') && s.length >= 12) s = '521' + s.slice(2);
+  if (s.startsWith('54') && !s.startsWith('549') && s.length >= 11) s = '549' + s.slice(2);
+  return s;
 }
 
-function stripBotMention(text) {
-  return text.replace(/@?bunny\s*/ig, "").trim();
-}
+const { say } = cfonts
+console.log(chalk.magentaBright('\n❀ Iniciando...'))
+  say('Bunny Girl', {
+  align: 'center',           
+  gradient: ['red', 'blue'] 
+})
+  say('Bunny Girl Bot', {
+  font: 'console',
+  align: 'center',
+  gradient: ['blue', 'magenta']
+})
 
-function printBanner() {
-  try {
-    const art = figlet.textSync(config.botName.toUpperCase(), { font: "Standard" });
-    console.log(art);
-  } catch {
-    console.log(`\n===== ${config.botName.toUpperCase()} =====\n`);
-  }
-  console.log("=".repeat(52));
-}
+const botTypes = [
+  { name: 'SubBot', folder: './Sessions/Subs', starter: startSubBot },
+];
+if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp', { recursive: true });
+global.conns = global.conns || [];
+const reconnecting = new Set();
+const msgStore = new Map();
+const msgLimit = 500;
 
-function askQuestion(question) {
-  const rl = readline.createInterface({ input: stdin, output: stdout });
-  return rl.question(question).finally(() => rl.close());
-}
-
-function hasRegisteredSession() {
-  try {
-    const creds = JSON.parse(fs.readFileSync(path.join(__dirname, "auth", "creds.json"), "utf8"));
-    return creds.registered === true;
-  } catch {
-    return false;
-  }
-}
-
-async function chooseAuthMethod() {
-  printBanner();
-  const paired = hasRegisteredSession();
-  if (paired) {
-    console.log(`🐰 Sesión ya vinculada. Conectando ${config.botName}...\n`);
-    return "linked";
-  }
-  console.log("Elige cómo vincular tu WhatsApp:\n");
-  console.log("  [1] Código QR (escanear con el teléfono)");
-  console.log("  [2] Código de 8 dígitos (vincular con número de teléfono)\n");
-  if (config.authMethod === "qr" || config.authMethod === "code") {
-    console.log(`(AUTH_METHOD configurado → usando opción ${config.authMethod === "code" ? "2: código de 8 dígitos" : "1: QR"})`);
-    return config.authMethod;
-  }
-  if (!isTTY) {
-    const phone = config.pairingPhone || config.owner;
-    if (config.authMethod === "qr") {
-      console.log("(Sin terminal interactiva → usando opción 1: QR, se imprimirá en el log.)");
-      return "qr";
+async function loadBots() {
+  for (const { name, folder, starter } of botTypes) {
+    if (!fs.existsSync(folder)) continue;
+    const botIds = fs.readdirSync(folder);
+    for (const userId of botIds) {
+      const sessionPath = path.join(folder, userId);
+      const credsPath = path.join(sessionPath, 'creds.json');
+      if (!fs.existsSync(credsPath)) continue;
+      if (global.conns.some((conn) => conn.userId === userId)) continue;
+      if (reconnecting.has(userId)) continue;
+      try {
+        reconnecting.add(userId);
+        await starter(null, null, '', false, userId, '');
+      } catch (e) {
+        console.log(chalk.gray(`[ loadBots ] Error iniciando ${name} ${userId}: ${e?.message || e}`));
+        reconnecting.delete(userId);
+      }
+      await new Promise((res) => setTimeout(res, 2500));
     }
-    if (config.authMethod === "code" || phone) {
-      console.log(`(Sin terminal interactiva → usando opción 2: código de 8 dígitos${phone ? ` para ${phone}` : ""}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
-      return "code";
-    }
-    console.log("⚠️ Sin terminal interactiva y sin número configurado. NO se imprimirá QR.");
-    console.log("   Para recibir el código de 8 dígitos define en .env:");
-    console.log("   PAIRING_PHONE=<número con código de país, sin +>  (o OWNER_NUMBER)");
-    console.log("   El bot seguirá esperando...\n");
-    return "code";
   }
-  let choice;
-  while (choice !== "1" && choice !== "2") {
-    choice = (await askQuestion("Elige 1 o 2: ")).trim();
-    if (choice !== "1" && choice !== "2") console.log("⚠️ Opción inválida. Escribe 1 (QR) o 2 (código de 8 dígitos).");
-  }
-  return choice === "2" ? "code" : "qr";
+  setTimeout(loadBots, 60 * 1000);
 }
 
-async function resolvePairingPhone() {
-  if (config.pairingPhone) return config.pairingPhone;
-  if (config.owner) return config.owner;
-  if (!isTTY) return "";
-  const raw = (await askQuestion("Escribe el número de teléfono (con código de país, sin +): ")).trim();
-  return raw.replace(/\D/g, "");
+async function initDB() {
+  db.initDB();
+  db.clearDB();
+  global.db = db;
+  console.log(chalk.gray('[ ✿  ]  Base de datos cargada correctamente.'));
 }
 
-let pairingAttempts = 0;
-
-function nextPairingDelay() {
-  pairingAttempts++;
-  if (pairingAttempts <= 3) return 55000;
-  if (pairingAttempts <= 6) return 120000;
-  return 1800000;
-}
-
-function scheduleCodeExpiry() {
-  if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
-  const delay = nextPairingDelay();
-  codeExpiryTimer = setTimeout(() => {
-    if (!currentCode) return;
-    console.log(`⏰ El código ${currentCode} expiró. Generando uno nuevo...\n`);
-    currentCode = null;
-    try {
-      sock?.end?.(new Error("pairing-code-expired"));
-    } catch {}
-    if (!reconnecting) {
-      reconnecting = true;
-      setTimeout(startBot, 4000);
-    }
-  }, delay);
-  if (pairingAttempts > 6) {
-    console.log(`🚫 PAUSA: WhatsApp bloqueó temporalmente la vinculación de ${config.pairingPhone || config.owner} por demasiados intentos.`);
-    console.log("   Próximo intento en 30 minutos. Para vincular antes:");
-    console.log("   1) Ajustes → Dispositivos vinculados: no superar 4 dispositivos (borra los viejos).");
-    console.log("   2) Ingresa el código en el teléfono donde el número tiene WhatsApp activo, sin guiones.");
-  } else if (pairingAttempts > 3) {
-    console.log(`⚠️ WhatsApp puede estar limitando la vinculación. Próximo intento en ${delay / 1000}s.`);
-    console.log("   Verifica: 1) el número tenga WhatsApp activo, 2) no superes 4 dispositivos vinculados (Ajustes → Dispositivos vinculados).");
-  }
-}
-
-async function startBot() {
-  reconnecting = false;
-  if (authMethod === null) authMethod = await chooseAuthMethod();
-  const { state, saveCreds } = await useMultiFileAuthState("./auth");
-  let version;
+function cleanCache() {
   try {
-    ({ version } = await fetchLatestBaileysVersion());
+    if (fs.existsSync('./tmp')) {
+      const files = fs.readdirSync('./tmp');
+      let cleaned = 0;
+      for (const file of files) {
+        try { fs.unlinkSync(path.join('./tmp', file)); cleaned++; } catch {}
+      }
+      if (cleaned > 0) console.log(chalk.gray(`[ ⚠ ] Cache tmp: ${cleaned} archivos eliminados`));
+    }
   } catch (e) {
-    console.warn("⚠️ No se pudo consultar la versión de Baileys; usando la predeterminada.");
+    console.error(chalk.red('Error en cleanCache: '), e);
   }
+}
 
-  sock = await makeWASocket({
-    ...(version ? { version } : {}),
-    auth: { creds: state.creds, keys: state.keys },
-    logger: pino({ level: "silent" }),
-    browser: Browsers.windows("Chrome"),
-    markOnlineOnConnect: false
+function clearSession() {
+  try {
+    const sessionDir = './Sessions/Owner';
+    if (!fs.existsSync(sessionDir)) return;
+    for (const file of fs.readdirSync(sessionDir)) {
+      try { fs.unlinkSync(path.join(sessionDir, file)); } catch {}
+    }
+    log.warn('Sesión del principal eliminada — reiniciando para vincular de nuevo...');
+  } catch (e) {
+    log.error(`clearSession → ${e?.message || e}`);
+  }
+}
+
+let opcion;
+if (methodCodeQR) {
+  opcion = "1";
+} else if (methodCode) {
+  opcion = "2";
+  if (!phoneNumber) {
+    console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
+    phoneInput = readlineSync.question("");
+    phoneNumber = normalizePhone(phoneInput);
+  }
+} else if (!fs.existsSync("./Sessions/Owner/creds.json")) {
+  opcion = readlineSync.question(chalk.bold.white("\nSeleccione una opción:\n") + chalk.blueBright("1. Con código QR\n") + chalk.cyan("2. Con código de texto de 8 dígitos\n--> "));
+  while (!/^[1-2]$/.test(opcion)) {
+    console.log(chalk.bold.redBright(`No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`));
+    opcion = readlineSync.question("--> ");
+  }
+  if (opcion === "2") {
+    console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
+    phoneInput = readlineSync.question("");
+    phoneNumber = normalizePhone(phoneInput);
+  }
+}
+
+let bootTime = Date.now();
+let reconexion = 0;
+let botReady = false;
+let isRestarting = false;
+const retriesLimit = 15;
+function remove(sock) {
+  if (!sock) return;
+  try { sock.ev.removeAllListeners(); } catch {}
+  try { sock.ws?.close(); } catch {}
+  try { sock.end?.(new Error('replaced')); } catch {}
+  try { sock.msgRetryCounterCache?.close(); } catch {}
+}
+
+const logger = pino({ level: "silent" });
+const versionCache = { value: null, expiresAt: 0 };
+async function getVersion() {
+  if (versionCache.value && Date.now() < versionCache.expiresAt) return versionCache.value;
+  try {
+    const latest = await fetchLatestBaileysVersion();
+    versionCache.value = latest.version;
+    versionCache.expiresAt = Date.now() + 60 * 60 * 1000;
+  } catch (e) {
+    if (!versionCache.value) versionCache.value = [2, 3000, 1033105955];
+  }
+  return versionCache.value;
+}
+
+async function warmupGroups(sock) {
+  try {
+    const allChats = db.getChat()
+    const chatIds = allChats.map(c => c.id).filter(id => typeof id === 'string' && id.endsWith('@g.us')).slice(0, 50)
+    if (!chatIds.length) return
+    console.log(chalk.gray(`[ ✿ ] Precargando metadata de ${chatIds.length} grupos...`))
+    const t = Date.now()
+    const batches = []
+    for (let i = 0; i < chatIds.length; i += 10) {
+      batches.push(chatIds.slice(i, i + 10))
+    }
+    await Promise.allSettled(batches.map(batch => Promise.allSettled(batch.map(async id => {
+    try {
+    const meta = await sock.groupMetadata(id)
+    if (meta) setCachedMeta(id, meta) } catch {}}))))
+    console.log(chalk.gray(`[ ✿ ] Warmup completado en ${Date.now() - t}ms`))
+  } catch (e) {
+    console.log(chalk.gray(`[ ✿ ] warmupGroups → ${e?.message || e}`))
+  }
+}
+
+export async function startBot() {
+  if (isRestarting) return;
+  isRestarting = true;
+  bootTime = Date.now();
+  const { state, saveCreds: saveCredsDB } = await useMultiFileAuthState('./Sessions/Owner');
+  const version = await getVersion();
+  let saveCredsTimer = null;
+  const saveCreds = () => { clearTimeout(saveCredsTimer); saveCredsTimer = setTimeout(saveCredsDB, 2000); };
+  const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, checkperiod: 600, useClones: false });
+  console.info = () => {};
+  console.debug = () => {};
+  const sock = makeWASocket({
+    version,
+    logger,
+    browser: Browsers.macOS('Chrome'),
+    printQRInTerminal: false,
+    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
+    markOnlineOnConnect: false,
+    syncFullHistory: false,
+    shouldSyncHistoryMessage: () => false,
+    fireInitQueries: false,
+    generateHighQualityLinkPreview: false,
+    shouldIgnoreJid: (jid) => jid.endsWith('@broadcast'),
+    keepAliveIntervalMs: 30000,
+    connectTimeoutMs: 20000,
+    transactionOpts: { maxCommitRetries: 10, delayBetweenTriesMs: 3000 },
+    emitOwnEvents: false,
+    msgRetryCounterCache,
+    cachedGroupMetadata: async (jid) => getCachedMeta(jid) ?? undefined,
+    getMessage: async (key) => msgStore.get(key.remoteJid + ':' + key.id),
   });
 
-  const origSend = sock.sendMessage.bind(sock);
-  sock.sendMessage = async (...args) => {
-    try {
-      const r = await origSend(...args);
-      console.log(`📤 Mensaje enviado a ${args[0]}`);
-      return r;
-    } catch (e) {
-      console.error(`❌ Error al ENVIAR a ${args[0]}:`, e.message);
-      throw e;
+  global.sock = sock;
+  patchGroupMetadata(sock);
+  sock.msgRetryCounterCache = msgRetryCounterCache;
+  sock.ev.on("creds.update", saveCreds);
+  sock.sendText = (jid, text, quoted = "", options) => sock.sendMessage(jid, { text, ...options }, { quoted });
+  sock.decodeJid = (jid) => {
+    if (!jid) return jid;
+    if (/:\d+@/gi.test(jid)) {
+      const decode = jidDecode(jid) || {};
+      return (decode.user && decode.server && decode.user + "@" + decode.server) || jid;
     }
+    return jid;
   };
 
-  sock.ev.on("creds.update", saveCreds);
-
-  if (!hasRegisteredSession() && authMethod === "code") {
-    const phone = await resolvePairingPhone();
-    if (phone) {
-      setTimeout(async () => {
-        try {
-          const code = await sock.requestPairingCode(phone);
-          const clean = code.match(/.{1,4}/g)?.join("-") || code;
-          currentCode = clean;
-          console.log(`\n🔢 Código de vinculación para ${phone}: ${clean}`);
-          console.log("👉 En WhatsApp: Ajustes → Dispositivos vinculados → Vincular un dispositivo → Vincular con número de teléfono.\n");
-          scheduleCodeExpiry();
-        } catch (e) {
-          console.error("❌ No se pudo generar el código de vinculación:", e.message);
+  if (opcion === "2" && !state.creds.registered) {
+    setTimeout(async () => {
+      try {
+        if (!state.creds.registered) {
+          const pairing = await sock.requestPairingCode(phoneNumber);
+          const codeBot = pairing?.match(/.{1,4}/g)?.join("-") || pairing;
+          console.log(chalk.bold.white(chalk.bgMagenta(`Código de emparejamiento:`)), chalk.bold.white(chalk.white(codeBot)));
         }
-      }, 3000);
-    } else {
-      console.log("⚠️ No hay número configurado. Define PAIRING_PHONE u OWNER_NUMBER en .env y reinicia para recibir el código de 8 dígitos.");
-    }
+      } catch (err) {
+        console.log(chalk.red("Error al generar código:"), err);
+      }
+    }, 3000);
   }
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr && authMethod === "qr") {
-      console.log("\n📱 Escanea el QR con WhatsApp:\n");
-      qrcode.generate(qr, { small: true });
-    } else if (qr) {
-      console.log("(QR recibido, ignorado: no se eligió la opción 1)");
+  sock.ev.on("messages.upsert", async ({ messages, type }) => {
+    if (!botReady) return;
+    if (type !== 'notify') return;
+    for (const msg of messages) {
+      if (msg?.message && msg?.key?.id) {
+        const sid = msg.key.remoteJid + ':' + msg.key.id;
+        msgStore.set(sid, msg.message);
+        if (msgStore.size > msgLimit) msgStore.delete(msgStore.keys().next().value);
+      }
+      try {
+        if (!msg?.message || msg.key?.remoteJid === "status@broadcast") continue;
+        if ((msg.messageTimestamp * 1000) < bootTime - 15_000) continue;
+        if (msg.message.ephemeralMessage) msg.message = msg.message.ephemeralMessage.message;
+        const m = await smsg(sock, msg);
+        if (typeof main === 'function') main(sock, m, messages).catch((err) => console.error('[ ✿  ]  Main Owner »', err?.message));
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+  });
+  sock.ev.on("group-participants.update", ({ id }) => { deleteCachedMeta(id); });
+  sock.ev.on("groups.update", (updates) => { for (const update of updates) deleteCachedMeta(update.id); });
+  try { await events(sock, null); } catch (err) { console.log(chalk.gray(`[ EVENT ERROR ] → ${err}`)); }
+
+  sock.ev.on("connection.update", async (update) => {
+    const { qr, connection, lastDisconnect, isNewLogin, receivedPendingNotifications } = update;
+    if (qr != 0 && qr != undefined || methodCodeQR) {
+      if (opcion == '1' || methodCodeQR) {
+        console.log(chalk.green.bold("[ ✿ ] Escanea este código QR"));
+        qrcode.generate(qr, { small: true });
+      }
     }
     if (connection === "open") {
-      reconnecting = false;
-      wasConnected = true;
-      currentCode = null;
-      if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
-      console.log(`🐰 ${config.botName} conectado.`);
-      console.log(`⚙️ Config: prefix=${JSON.stringify(config.prefix)} aiEnabled=${config.aiEnabled} aiAutoPrivate=${config.aiAutoPrivate} owner=${config.owner}`);
+      bootTime = Date.now();
+      reconexion = 0;
+      isRestarting = false;
+      const userName = sock.user.name || "Desconocido";
+      log.success(`[ ✿ ]  Conectado a: ${userName}`);
+      if (!botReady) {
+        botReady = true;
+        warmupGroups(sock);
+      }
     }
+    if (isNewLogin) log.info("Nuevo dispositivo detectado");
     if (connection === "close") {
-      const code = lastDisconnect?.error?.output?.statusCode;
-      console.warn(`⚠️ Conexión cerrada. StatusCode: ${code ?? "desconocido"}`, lastDisconnect?.error?.message ? `(${lastDisconnect.error.message})` : "");
-      if (wasConnected && code === DisconnectReason.loggedOut) {
-        console.log("🔐 Sesión cerrada. Elimina ./auth y vuelve a vincular.");
+      remove(sock);
+      const reason = lastDisconnect?.error?.output?.statusCode || 0;
+      if ([DisconnectReason.loggedOut, DisconnectReason.forbidden, DisconnectReason.multideviceMismatch].includes(reason)) {
+        log.warn(`Principal desvinculado (${reason}) — limpiando sesión y reiniciando...`);
+        botReady = false;
+        isRestarting = false;
+        clearSession();
+        process.exit(1);
+      }
+      if (reason === DisconnectReason.connectionReplaced) {
+        log.warn("Conexión reemplazada — cerrá la otra sesión antes de reconectar.");
+        isRestarting = false;
         return;
       }
-      if (!wasConnected) {
-        if (currentCode) {
-          console.log(`⏸ Esperando a que expire el código ${currentCode} para generar uno nuevo...`);
-          return;
-        }
-        if (!reconnecting) {
-          reconnecting = true;
-          pairingAttempts++;
-          const wait = pairingAttempts > 6 ? 1800000 : pairingAttempts > 3 ? 120000 : 3000;
-          console.log(`↻ Reintentando conexión en ${wait / 1000}s...`);
-          if (pairingAttempts > 6) {
-            console.log("🚫 PAUSA: WhatsApp bloqueó temporalmente la vinculación por demasiados intentos. Próximo intento en 30 minutos.");
-            console.log("   Verifica: 1) Dispositivos vinculados (máx 4), 2) el número tenga WhatsApp activo.");
-          }
-          setTimeout(startBot, wait);
-        }
-        return;
+      reconexion++;
+      if (reconexion > retriesLimit) {
+        log.error(`Demasiados reintentos (${retriesLimit}) — sesión posiblemente corrupta, limpiando...`);
+        botReady = false;
+        reconexion = 0;
+        isRestarting = false;
+        clearSession();
+        process.exit(1);
       }
-      if (!reconnecting) {
-        reconnecting = true;
-        console.log("↻ Reintentando conexión en 3s...");
-        setTimeout(startBot, 3000);
-      }
-    }
-  });
-
-  sock.ev.on("messages.upsert", async ({ messages }) => {
-    for (const msg of messages) {
-      try {
-        const txt = getText(msg);
-        console.log(`📩 Mensaje de [${msg.key.remoteJid}] ${msg.key.fromMe ? "(fromMe/propio)" : ""}: ${txt ? JSON.stringify(txt) : "(sin texto)"}`);
-        await handleMessage(msg);
-      } catch (e) {
-        console.error("❌ Error:", e);
-      }
-    }
-  });
-
-  sock.ev.on("group-participants.update", async ({ id, participants, action }) => {
-    try {
-      const g = db.getGroup(id);
-      if (!g[action === "add" ? "welcome" : "goodbye"]) return;
-      for (const p of participants) {
-        const t = action === "add" ? frase("welcome", "@" + jidNumber(p)) : frase("goodbye", "@" + jidNumber(p));
-        await sock.sendMessage(id, { text: t, mentions: [p] });
-      }
-    } catch (e) {
-      console.error("❌ Evento de grupo:", e);
+      const delay = Math.min(3000 * reconexion, 30000);
+      const reasonMessages = {
+        [DisconnectReason.connectionLost]: "Se perdió la conexión al servidor, intentando reconectar...",
+        [DisconnectReason.connectionClosed]: "Conexión cerrada, intentando reconectarse...",
+        [DisconnectReason.restartRequired]: "Es necesario reiniciar...",
+        [DisconnectReason.timedOut]: "Tiempo de conexión agotado, intentando reconectarse...",
+        [DisconnectReason.badSession]: "Sesión inválida, limpiando y reconectando...",
+      };
+      log.warn(reasonMessages[reason] || `Desconexión (${reason}), reconectando en ${delay / 1000}s...`);
+      isRestarting = false;
+      setTimeout(startBot, delay);
     }
   });
 }
 
-function getText(msg) {
-  return commands.getText(msg);
+setInterval(cleanCache, 60 * 60 * 1000);
+cleanCache();
+
+(async () => {
+  await initDB();
+  await cmdsLoader();
+  await startBot();
+  await loadBots();
+})();
+
+function onUncaughtException(e) {
+  log.error(`ERROR → ${e?.stack || e?.message || e}`);
 }
-
-async function handleMessage(msg) {
-  if (!msg.message || msg.key.fromMe) return;
-  const jid = msg.key.remoteJid;
-  if (!jid) return;
-
-  const sender = msg.key.participant || jid;
-  const text = getText(msg);
-  if (!text) return;
-
-  const isGroup = jid.endsWith("@g.us");
-
-  const botNumber = sock.user?.id ? jidNumber(sock.user.id) : "";
-  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
-  const mentionedBot = mentioned.some(x => jidNumber(x) === botNumber);
-  const mentionText = stripBotMention(text);
-  if (config.aiEnabled && !text.startsWith(config.prefix) && ((isGroup && mentionedBot) || (!isGroup && config.aiAutoPrivate))) {
-    const prompt = mentionText || text;
-    const history = aiHistory.get(jid) || [];
-    const result = await askAI(prompt, history);
-    if (result.ok) {
-      pushAIHistory(jid, "user", prompt);
-      pushAIHistory(jid, "assistant", result.text);
-      await sock.sendMessage(jid, { text: `🐰🤖 ${result.text}`, mentions: [sender] });
-    } else {
-      await sock.sendMessage(jid, { text: result.message });
-    }
+function onUnhandledRejection(reason) {
+  if (reason instanceof SyntaxError) {
+    process.off('uncaughtException', onUncaughtException);
+    process.off('unhandledRejection', onUnhandledRejection);
+    process.nextTick(() => { throw reason; });
     return;
   }
-
-  const u = db.getUser(sender);
-  if (Date.now() - u.lastXpAt > 60000) {
-    const gain = 5 + Math.floor(Math.random() * 11);
-    const old = calculateLevel(u.xp);
-    const newXp = u.xp + gain;
-    const level = calculateLevel(newXp);
-    db.updateUser(sender, {
-      xp: newXp,
-      level: level.level,
-      lastXpAt: Date.now(),
-      stats: { ...u.stats, messages: u.stats.messages + 1 }
-    });
-    if (level.level > old.level) {
-      await sock.sendMessage(jid, {
-        text: `🎉 ¡${"@" + jidNumber(sender)} subió al nivel *${level.level}*!`,
-        mentions: [sender]
-      });
-    }
-  }
-
-  if (isGroup) {
-    const g = db.getGroup(jid);
-    const admin = await isAdmin(sock, jid, sender);
-
-    if (!admin && !text.startsWith(config.prefix)) {
-      await checkAntiLink(sock, msg);
-
-      if (g.antiparoles && g.blockedWords.some(w => text.toLowerCase().includes(w))) {
-        try { await sock.sendMessage(jid, { delete: msg.key }); } catch {}
-        await sock.sendMessage(jid, {
-          text: `🚫 ${"@" + jidNumber(sender)}, esa palabra está prohibida en este grupo.`,
-          mentions: [sender]
-        });
-        return;
-      }
-    }
-  }
-
-  if (!text.startsWith(config.prefix)) return;
-
-  const body = text.slice(config.prefix.length).trim();
-  if (!body) return;
-
-  const parts = body.split(/\s+/);
-  const command = parts.shift().toLowerCase();
-  const args = parts;
-
-  console.log(`⚡ Ejecutando comando: ${JSON.stringify(command)} args=${JSON.stringify(args)}`);
-  try {
-    await commands.execute(sock, msg, command, args, config);
-    console.log(`✅ Comando ${JSON.stringify(command)} ejecutado sin errores`);
-  } catch (e) {
-    console.error(`❌ Error en comando ${JSON.stringify(command)}:`, e);
-  }
+  log.error(`RECHAZO → ${reason?.stack || reason?.message || reason}`);
 }
-
-async function isAdmin(sock, jid, user) {
-  try {
-    const meta = await sock.groupMetadata(jid);
-    const p = meta.participants.find(x => x.id === user);
-    return !!p?.admin;
-  } catch {
-    return false;
-  }
-}
-
-function safeRestart() {
-  if (reconnecting) return;
-  reconnecting = true;
-  try {
-    sock?.end?.(new Error("safe-restart"));
-  } catch {}
-  setTimeout(startBot, 4000);
-}
-
-process.on("uncaughtException", (e) => {
-  console.error("💥 Error no capturado:", e?.message || e);
-  safeRestart();
-});
-process.on("unhandledRejection", (e) => {
-  console.error("💥 Promesa rechazada:", e?.message || e);
-  safeRestart();
-});
-
-startBot().catch(e => {
-  console.error("❌ Error fatal:", e);
-  process.exit(1);
-});
-       
+process.on('uncaughtException', onUncaughtException);
+process.on('unhandledRejection', onUnhandledRejection);

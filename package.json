@@ -1,21 +1,58 @@
 {
-  "name": "bunny-bot-v2-ia",
-  "version": "2.2.0",
-  "description": "Bunny Bot V2 con IA conversacional, administración, economía, RPG y juegos.",
+  "name": "bunny-girl-bot",
+  "version": "3.2",
+  "description": "Bunny Girl Bot - WhatsApp Multi-Device, updated with better performance",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
+    "format": "prettier --write .",
+    "start": "node index.js"
   },
+  "imports": {
+    "#serialize": "./core/serialize.js",
+    "#main": "./main.js",
+    "#core/*": "./core/*.js",
+    "#system/*": "./core/system/*.js",
+    "#events": "./cmds/events.js",
+    "#db": "./core/system/database.js"
+  },
+  "keywords": [
+    "whatsapp-bot",
+    "baileys-md",
+    "multi-device"
+  ],
+  "license": "MIT",
   "engines": {
-    "node": ">=18.17.0"
+    "node": ">=22.13.0",
+    "npm": ">=10.9.4"
   },
   "dependencies": {
-    "Baileys-Ruby": "github:Dioneibi-rip/Ruby-Baileys",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "figlet": "^1.11.4",
-    "pino": "^9.6.0",
-    "qrcode-terminal": "^0.12.0"
+    "@vitalets/google-translate-api": "latest",
+    "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
+    "axios": "^0.24.0",
+    "baileys": "github:this-xys/WaSocket",
+    "cfonts": "^3.3.0",
+    "chalk": "^4.1.2",
+    "cheerio": "npm:cheerio@1.0.0-rc.12",
+    "file-type": "^16.5.4",
+    "fluent-ffmpeg": "^2.1.2",
+    "form-data": "^4.0.0",
+    "gradient-string": "^2.0.2",
+    "grapheme-splitter": "^1.0.4",
+    "human-readable": "^0.2.1",
+    "jimp": "latest",
+    "lodash": "latest",
+    "moment": "^2.29.4",
+    "moment-timezone": "^0.5.37",
+    "node-cache": "latest",
+    "node-fetch": "^3.2.10",
+    "node-webpmux": "^3.2.0",
+    "pino": "^8.8.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "readline-sync": "^1.4.10",
+    "syntax-error": "^1.4.0",
+    "ws": "^8.18.3",
+    "yt-search": "^2.10.4"
   }
 }
