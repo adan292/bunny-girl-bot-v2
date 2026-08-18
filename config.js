@@ -6,7 +6,7 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 const DEFAULT_PAIRING_PHONE = "584242773183";
 
 module.exports = {
-  prefix: process.env.PREFIX || "#",
+  prefix: ((process.env.PREFIX || "").trim() || "#"),
   owner: (process.env.OWNER_NUMBER || "").replace(/\D/g, ""),
   phoneNumber: (process.env.PHONE_NUMBER || DEFAULT_PAIRING_PHONE).replace(/\D/g, ""),
   pairingPhone: (process.env.PAIRING_PHONE || DEFAULT_PAIRING_PHONE).replace(/\D/g, ""),

@@ -321,7 +321,13 @@ async function handleMessage(msg) {
   const command = parts.shift().toLowerCase();
   const args = parts;
 
-  await commands.execute(sock, msg, command, args, config);
+  console.log(`⚡ Ejecutando comando: ${JSON.stringify(command)} args=${JSON.stringify(args)}`);
+  try {
+    await commands.execute(sock, msg, command, args, config);
+    console.log(`✅ Comando ${JSON.stringify(command)} ejecutado sin errores`);
+  } catch (e) {
+    console.error(`❌ Error en comando ${JSON.stringify(command)}:`, e);
+  }
 }
 
 async function isAdmin(sock, jid, user) {
