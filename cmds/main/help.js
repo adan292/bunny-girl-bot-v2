@@ -48,15 +48,15 @@ export default {
 
       const instagram = (global.links && global.links.instagram) || '';
 
-      // El "botón de canal" (reenviado desde newsletter) debe usar SIEMPRE el
-      // canal de Ginko (global.links.channelCode). Forzamos la resolución con
-      // force=true para ignorar cualquier canal viejo guardado en la DB y
-      // resolver directamente desde el código del canal oficial de Ginko.
+      // El "botón de canal" (reenviado desde newsletter) aparece si el JID
+      // ya fue resuelto (al conectar el bot llama a resolveChannel que hace
+      // newsletterMetadata(invite, code)). Si no está resuelto aún, intentamos
+      // resolverlo en background pero NO lo usamos para no romper el envío.
       const { resolveChannel, getChannelInfo } = await import('#lib/channel');
-      await resolveChannel(sock, db, true).catch(()=>{});
+      resolveChannel(sock, db).catch(()=>{});
       const chInfo = getChannelInfo();
-      let canalId = chInfo.id || '';
-      let canalName = chInfo.resolved ? chInfo.name : global.links.channelName || '';
+      let canalId = chInfo.id || botSettings.newsletter_id || '';
+      let canalName = (chInfo.resolved ? chInfo.name : '') || botSettings.nameid || '';
       // Si el JID en la DB es el de yuki (viejo) lo ignoramos
       if (canalId && canalId.includes('120363401404146384')) { canalId = ''; canalName = ''; }
       if (canalName && /yuki|ყµҡเ/i.test(canalName)) { canalName = ''; canalId = ''; }
