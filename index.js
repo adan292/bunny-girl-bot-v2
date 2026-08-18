@@ -30,6 +30,7 @@ app.get("/health", (_, res) => res.json({ ok: true, version: config.version }));
 app.listen(config.port, () => console.log(`🌐 Health server en ${config.port}`));
 
 let reconnecting = false;
+let wasConnected = false;
 let authMethod = null;
 let sock;
 const aiHistory = new Map();
@@ -59,9 +60,18 @@ function askQuestion(question) {
   return rl.question(question).finally(() => rl.close());
 }
 
+function hasRegisteredSession() {
+  try {
+    const creds = JSON.parse(fs.readFileSync(path.join(__dirname, "auth", "creds.json"), "utf8"));
+    return creds.registered === true;
+  } catch {
+    return false;
+  }
+}
+
 async function chooseAuthMethod() {
   printBanner();
-  const paired = fs.existsSync(path.join(__dirname, "auth", "creds.json"));
+  const paired = hasRegisteredSession();
   if (paired) {
     console.log(`🐰 Sesión ya vinculada. Conectando ${config.botName}...\n`);
     return "linked";
@@ -74,16 +84,17 @@ async function chooseAuthMethod() {
     return config.authMethod;
   }
   if (!isTTY) {
-    const method = config.authMethod === "code" ? "code" : config.authMethod === "qr" ? "qr" : config.pairingPhone ? "code" : null;
-    if (method) {
-      console.log(`(Sin terminal interactiva → usando opción ${method === "code" ? "2: código de 8 dígitos" : "1: QR"}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
-      return method;
+    const phone = config.pairingPhone || config.owner;
+    if (config.authMethod === "qr") {
+      console.log("(Sin terminal interactiva → usando opción 1: QR, se imprimirá en el log.)");
+      return "qr";
     }
-    console.log("⚠️ Sin terminal interactiva y sin AUTH_METHOD. NO se lanzará QR.\n");
-    console.log("Para elegir, configura en .env:");
-    console.log("  AUTH_METHOD=code  → código de 8 dígitos (con PAIRING_PHONE)");
-    console.log("  AUTH_METHOD=qr    → código QR\n");
-    process.exit(1);
+    if (config.authMethod === "code" || phone) {
+      console.log(`(Sin terminal interactiva → usando opción 2: código de 8 dígitos${phone ? ` para ${phone}` : ""}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
+      return "code";
+    }
+    console.log("(Sin terminal interactiva y sin número configurado → usando QR. Define OWNER_NUMBER o PAIRING_PHONE en .env para usar el código de 8 dígitos.)");
+    return "qr";
   }
   let choice;
   while (choice !== "1" && choice !== "2") {
@@ -95,12 +106,14 @@ async function chooseAuthMethod() {
 
 async function resolvePairingPhone() {
   if (config.pairingPhone) return config.pairingPhone;
+  if (config.owner) return config.owner;
   if (!isTTY) return "";
   const raw = (await askQuestion("Escribe el número de teléfono (con código de país, sin +): ")).trim();
   return raw.replace(/\D/g, "");
 }
 
 async function startBot() {
+  reconnecting = false;
   if (authMethod === null) authMethod = await chooseAuthMethod();
   const { state, saveCreds } = await useMultiFileAuthState("./auth");
   let version;
@@ -120,8 +133,7 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  const paired = fs.existsSync(path.join(__dirname, "auth", "creds.json"));
-  if (!paired && authMethod === "code") {
+  if (!hasRegisteredSession() && authMethod === "code") {
     const phone = await resolvePairingPhone();
     if (phone) {
       setTimeout(async () => {
@@ -148,17 +160,19 @@ async function startBot() {
     }
     if (connection === "open") {
       reconnecting = false;
+      wasConnected = true;
       console.log(`🐰 ${config.botName} conectado.`);
     }
     if (connection === "close") {
       const code = lastDisconnect?.error?.output?.statusCode;
       console.warn(`⚠️ Conexión cerrada. StatusCode: ${code ?? "desconocido"}`, lastDisconnect?.error?.message ? `(${lastDisconnect.error.message})` : "");
-      if (code === DisconnectReason.loggedOut) {
+      if (wasConnected && code === DisconnectReason.loggedOut) {
         console.log("🔐 Sesión cerrada. Elimina ./auth y vuelve a vincular.");
         return;
       }
       if (!reconnecting) {
         reconnecting = true;
+        console.log("↻ Reintentando vinculación/conexión en 3s... (imprimirá un código nuevo en cada intento)");
         setTimeout(startBot, 3000);
       }
     }
