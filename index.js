@@ -117,8 +117,18 @@ async function resolvePairingPhone() {
   return raw.replace(/\D/g, "");
 }
 
+let pairingAttempts = 0;
+
+function nextPairingDelay() {
+  pairingAttempts++;
+  if (pairingAttempts <= 3) return 55000;
+  if (pairingAttempts <= 6) return 120000;
+  return 600000;
+}
+
 function scheduleCodeExpiry() {
   if (codeExpiryTimer) clearTimeout(codeExpiryTimer);
+  const delay = nextPairingDelay();
   codeExpiryTimer = setTimeout(() => {
     if (!currentCode) return;
     console.log(`⏰ El código ${currentCode} expiró. Generando uno nuevo...\n`);
@@ -130,7 +140,11 @@ function scheduleCodeExpiry() {
       reconnecting = true;
       setTimeout(startBot, 4000);
     }
-  }, 55000);
+  }, delay);
+  if (pairingAttempts > 3) {
+    console.log(`⚠️ WhatsApp puede estar limitando la vinculación. Próximo intento en ${delay / 1000}s.`);
+    console.log("   Verifica: 1) el número tenga WhatsApp activo, 2) no superes 4 dispositivos vinculados (Ajustes → Dispositivos vinculados).");
+  }
 }
 
 async function startBot() {
