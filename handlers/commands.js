@@ -359,21 +359,7 @@ ${result.text}`
 // 🧹 BORRAR MEMORIA DE IA
 // ==========================================
 
-if (
-    command === "iareset" ||
-    command === "resetia"
-) 
-
-    clearHistory(jid);
-
-    return reply(
-`🧹 *MEMORIA BORRADA*
-
-He eliminado el historial de conversación de este chat.
-
-🐰🤖 Podemos comenzar de nuevo.`
-    );
-if (command === "iareset" || command === "resetia") 
+if (command === "iareset" || command === "resetia") {
     clearHistory(jid);
 
     return reply(
@@ -384,3 +370,9 @@ He eliminado el historial de conversación de este chat.
 🐰🤖 Podemos comenzar de nuevo.`
     );
   }
+}
+
+module.exports = {
+  execute,
+  getText
+};
