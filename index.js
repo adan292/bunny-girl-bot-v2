@@ -93,8 +93,11 @@ async function chooseAuthMethod() {
       console.log(`(Sin terminal interactiva → usando opción 2: código de 8 dígitos${phone ? ` para ${phone}` : ""}. Configura AUTH_METHOD=qr|code en .env para elegir.)`);
       return "code";
     }
-    console.log("(Sin terminal interactiva y sin número configurado → usando QR. Define OWNER_NUMBER o PAIRING_PHONE en .env para usar el código de 8 dígitos.)");
-    return "qr";
+    console.log("⚠️ Sin terminal interactiva y sin número configurado. NO se imprimirá QR.");
+    console.log("   Para recibir el código de 8 dígitos define en .env:");
+    console.log("   PAIRING_PHONE=<número con código de país, sin +>  (o OWNER_NUMBER)");
+    console.log("   El bot seguirá esperando...\n");
+    return "code";
   }
   let choice;
   while (choice !== "1" && choice !== "2") {
@@ -147,7 +150,7 @@ async function startBot() {
         }
       }, 3000);
     } else {
-      console.log("⚠️ No hay número configurado (PAIRING_PHONE). Usa el QR.");
+      console.log("⚠️ No hay número configurado. Define PAIRING_PHONE u OWNER_NUMBER en .env y reinicia para recibir el código de 8 dígitos.");
     }
   }
 
