@@ -1,11 +1,15 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+// Número por defecto para vincular con código de 8 dígitos.
+// Se puede sobrescribir con PAIRING_PHONE en .env.
+const DEFAULT_PAIRING_PHONE = "584120299482";
+
 module.exports = {
   prefix: process.env.PREFIX || "#",
   owner: (process.env.OWNER_NUMBER || "").replace(/\D/g, ""),
-  phoneNumber: (process.env.PHONE_NUMBER || "").replace(/\D/g, ""),
-  pairingPhone: (process.env.PAIRING_PHONE || "").replace(/\D/g, ""),
+  phoneNumber: (process.env.PHONE_NUMBER || DEFAULT_PAIRING_PHONE).replace(/\D/g, ""),
+  pairingPhone: (process.env.PAIRING_PHONE || DEFAULT_PAIRING_PHONE).replace(/\D/g, ""),
   authMethod: (process.env.AUTH_METHOD || "").toLowerCase(),
   port: Number(process.env.PORT || 3000),
   botName: process.env.BOT_NAME || "Bunny Bot",
