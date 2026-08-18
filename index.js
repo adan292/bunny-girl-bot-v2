@@ -123,7 +123,7 @@ function nextPairingDelay() {
   pairingAttempts++;
   if (pairingAttempts <= 3) return 55000;
   if (pairingAttempts <= 6) return 120000;
-  return 600000;
+  return 1800000;
 }
 
 function scheduleCodeExpiry() {
@@ -141,7 +141,12 @@ function scheduleCodeExpiry() {
       setTimeout(startBot, 4000);
     }
   }, delay);
-  if (pairingAttempts > 3) {
+  if (pairingAttempts > 6) {
+    console.log(`🚫 PAUSA: WhatsApp bloqueó temporalmente la vinculación de ${config.pairingPhone || config.owner} por demasiados intentos.`);
+    console.log("   Próximo intento en 30 minutos. Para vincular antes:");
+    console.log("   1) Ajustes → Dispositivos vinculados: no superar 4 dispositivos (borra los viejos).");
+    console.log("   2) Ingresa el código en el teléfono donde el número tiene WhatsApp activo, sin guiones.");
+  } else if (pairingAttempts > 3) {
     console.log(`⚠️ WhatsApp puede estar limitando la vinculación. Próximo intento en ${delay / 1000}s.`);
     console.log("   Verifica: 1) el número tenga WhatsApp activo, 2) no superes 4 dispositivos vinculados (Ajustes → Dispositivos vinculados).");
   }
@@ -229,7 +234,14 @@ async function startBot() {
         }
         if (!reconnecting) {
           reconnecting = true;
-          setTimeout(startBot, 3000);
+          pairingAttempts++;
+          const wait = pairingAttempts > 6 ? 1800000 : pairingAttempts > 3 ? 120000 : 3000;
+          console.log(`↻ Reintentando conexión en ${wait / 1000}s...`);
+          if (pairingAttempts > 6) {
+            console.log("🚫 PAUSA: WhatsApp bloqueó temporalmente la vinculación por demasiados intentos. Próximo intento en 30 minutos.");
+            console.log("   Verifica: 1) Dispositivos vinculados (máx 4), 2) el número tenga WhatsApp activo.");
+          }
+          setTimeout(startBot, wait);
         }
         return;
       }
