@@ -152,6 +152,18 @@ async function startBot() {
     markOnlineOnConnect: false
   });
 
+  const origSend = sock.sendMessage.bind(sock);
+  sock.sendMessage = async (...args) => {
+    try {
+      const r = await origSend(...args);
+      console.log(`📤 Mensaje enviado a ${args[0]}`);
+      return r;
+    } catch (e) {
+      console.error(`❌ Error al ENVIAR a ${args[0]}:`, e.message);
+      throw e;
+    }
+  };
+
   sock.ev.on("creds.update", saveCreds);
 
   if (!hasRegisteredSession() && authMethod === "code") {
