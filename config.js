@@ -3,7 +3,7 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 // Número por defecto para vincular con código de 8 dígitos.
 // Se puede sobrescribir con PAIRING_PHONE en .env.
-const DEFAULT_PAIRING_PHONE = "584120299482";
+const DEFAULT_PAIRING_PHONE = "584242773183";
 
 module.exports = {
   prefix: process.env.PREFIX || "#",
