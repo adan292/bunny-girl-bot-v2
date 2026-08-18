@@ -30,7 +30,7 @@ export default {
 
 async function getInstagramMedia(url) {
   const apis = [
-    { endpoint: `${global.APIs.yuki.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${global.APIs.yuki.key}`, extractor: (res) => {
+    { endpoint: `${global.APIs.Ginko.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${global.APIs.Ginko.key}`, extractor: (res) => {
         if (!res.status || !res.data || !res.data.length) return null
         const media = res.data[0]
         if (!media?.url) return null

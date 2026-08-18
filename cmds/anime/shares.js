@@ -158,7 +158,7 @@ export default {
     const captionText = captions[currentCommand](fromName, toName, genero);
     const caption = who !== msg.sender ? `\`${fromName}.\` ${captionText} \`${toName}.\` ${getRandomSymbol()}.` : `\`${fromName}\` ${captionText} ${getRandomSymbol()}.`;
     try {
-      const response = await fetch(`${global.APIs.yuki.url}/sfw/interaction?inter=${currentCommand}&key=${global.APIs.yuki.key}`);
+      const response = await fetch(`${global.APIs.Ginko.url}/sfw/interaction?inter=${currentCommand}&key=${global.APIs.Ginko.key}`);
       const json = await response.json();
       const result = json?.result || json?.url || json?.data;
       if (!result) throw new Error('Sin resultado de la API.');

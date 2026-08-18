@@ -9,7 +9,7 @@ const isStickerUrl = (url) => {
 
 const searchPacks = async (query, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${global.APIs.yuki.url}/stickerly/search`, { params: { query, key: global.APIs.yuki.key }, timeout: 10000 });
+    const { data } = await axios.get(`${global.APIs.Ginko.url}/stickerly/search`, { params: { query, key: global.APIs.Ginko.key }, timeout: 10000 });
     return data;
   } catch (e) {
     if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return searchPacks(query, attempt + 1); }
@@ -19,7 +19,7 @@ const searchPacks = async (query, attempt = 1) => {
 
 const downloadPack = async (url, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${global.APIs.yuki.url}/stickerly/detail`, { params: { url, key: global.APIs.yuki.key }, timeout: 10000 });
+    const { data } = await axios.get(`${global.APIs.Ginko.url}/stickerly/detail`, { params: { url, key: global.APIs.Ginko.key }, timeout: 10000 });
     return data;
   } catch (e) {
     if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return downloadPack(url, attempt + 1); }

@@ -35,7 +35,7 @@ async function getTwitterMedia(url) {
         return { type: res.type || 'video', title: res.info?.text || null, author: res.info?.user_name || res.info?.user_screen_name || null, date: res.info?.date || null, url: res.media[0]?.url || null, likes: res.info?.likes || null, comments: res.info?.replies || null, retweets: res.info?.retweets || null }
       }
     },
-    { endpoint: `${global.APIs.yuki.url}/dl/twitter?url=${encodeURIComponent(url)}&key=${global.APIs.yuki.key}`, extractor: (res) => {
+    { endpoint: `${global.APIs.Ginko.url}/dl/twitter?url=${encodeURIComponent(url)}&key=${global.APIs.Ginko.key}`, extractor: (res) => {
         if (!res.status || !res.data?.result?.length) return null
         const hd = res.data.result.find(x => x.quality === '1920p' || x.quality === '1280p')
         const sd = res.data.result.find(x => x.quality === '852p' || x.quality === '568p')

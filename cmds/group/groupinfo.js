@@ -1,6 +1,7 @@
 import ws from 'ws';
 import fs from 'fs';
 import db from '#db';
+import defaultAvatar from '../../lib/default-avatar.js';
 
 export default {
   command: ['gp', 'groupinfo'],
@@ -8,7 +9,7 @@ export default {
   description: 'Ver la información del grupo.',
   run: async ({ msg, sock, usedPrefix, command, groupMetadata, participants }) => {
     const groupName = groupMetadata?.subject;
-    const groupBanner = await sock.profilePictureUrl(msg.chat, 'image').catch(() => 'https://cdn.yuki-wabot.my.id/files/2PVh.jpeg');
+    const groupBanner = await sock.profilePictureUrl(msg.chat, 'image').catch(() => defaultAvatar());
     const groupCreator = groupMetadata?.owner ? '@' + groupMetadata.owner.split('@')[0] : 'Desconocido';
     const groupAdmins = participants.filter(p => (p.admin === 'admin' || p.admin === 'superadmin')) || [];
     const totalParticipants = participants.length;

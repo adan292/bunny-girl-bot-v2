@@ -1,5 +1,6 @@
 import moment from 'moment-timezone';
 import db from '#db';
+import defaultAvatar from '../../lib/default-avatar.js';
 
 const growth = Math.pow(Math.PI / Math.E, 1.618) * Math.E * 0.75;
 
@@ -61,7 +62,7 @@ export default {
       }
     }    
     const haremCount = ownedIDs.length;
-    const perfil = await sock.profilePictureUrl(userId, 'image').catch((_) => 'https://cdn.yuki-wabot.my.id/files/2PVh.jpeg');    
+    const perfil = await sock.profilePictureUrl(userId, 'image').catch(() => defaultAvatar());
     const allUsers = db.getUser() || [];
     const users = Array.isArray(allUsers) ? allUsers.map(u => ({ ...u, jid: u.id })) : [];
     const sortedLevel = users.sort((a, b) => (b.level || 0) - (a.level || 0));    

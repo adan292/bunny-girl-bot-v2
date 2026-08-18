@@ -1,3 +1,5 @@
+// Cargar variables de entorno desde .env (si existe). Lo hacemos LO MÁS TEMPRANO posible.
+import "dotenv/config";
 import "./settings.js";
 import main from '#main';
 import events from '#events';
@@ -15,6 +17,8 @@ import "#system/database";
 import { startSubBot } from './cmds/socket/subs.js';
 import db from '#db';
 import NodeCache from "node-cache";
+import { resolveChannel } from '#lib/channel';
+import { startServer } from './server.js';
 
 const log = {
   info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
@@ -26,7 +30,15 @@ const log = {
 let phoneNumber = "";
 let phoneInput = "";
 const methodCodeQR = process.argv.includes("--qr");
-const methodCode = process.argv.includes("code");
+const methodCodeArg = process.argv.includes("code");
+const hasSessionFile = fs.existsSync("./Sessions/Owner/creds.json");
+
+// Método de vinculación por variable de entorno (.env): PAIRING_METHOD=code y PAIRING_NUMBER=52...
+const envMethod = (process.env.PAIRING_METHOD || "").trim().toLowerCase();
+const envNumber = (process.env.PAIRING_NUMBER || "").trim();
+const methodCodeByEnv = envMethod === "code" && envNumber;
+const methodCode = methodCodeArg || methodCodeByEnv;
+
 function normalizePhone(input) {
   let s = String(input).replace(/\D/g, '');
   if (!s) return '';
@@ -37,17 +49,34 @@ function normalizePhone(input) {
   return s;
 }
 
+// Chequeo de versión de Node: node:sqlite necesita >=22.5.0 (lo usa core/system/database.js).
+// No forzamos engines para no romper Termux, pero advertimos claro.
+const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
+const needsSqliteVersion = (nodeMajor > 22) || (nodeMajor === 22 && nodeMinor >= 5);
+if (!needsSqliteVersion) {
+  console.log(chalk.yellow(`\n[ ⚠ ] Tu Node.js es ${process.versions.node} pero la base SQLite nativa requiere Node >= 22.5.0.`));
+  console.log(chalk.yellow(`[ ⚠ ] En Termux puedes actualizar con: pkg update && pkg install nodejs`));
+  console.log(chalk.yellow(`[ ⚠ ] Si ya tienes Node 22+ y sigue apareciendo, omite este aviso.\n`));
+} else {
+  console.log(chalk.gray(`[ ✿ ] Node.js ${process.versions.node} detectado.`));
+}
+
 const { say } = cfonts
-console.log(chalk.magentaBright('\n❀ Iniciando...'))
-  say('Bunny Girl', {
-  align: 'center',           
-  gradient: ['red', 'blue'] 
-})
-  say('Bunny Girl Bot', {
-  font: 'console',
+console.log('\n')
+  say('BUNNY GIRL', {
+  font: 'block',
   align: 'center',
-  gradient: ['blue', 'magenta']
+  gradient: ['#ff7eb3', '#f97316'],
+  letterSpacing: 1,
+  space: false
 })
+  say('Bot WhatsApp Multi-Device', {
+  font: 'chrome',
+  align: 'center',
+  gradient: ['blue', 'magenta'],
+  letterSpacing: 2
+})
+console.log(chalk.cyan('      🍁 Creado por Ginko-MD (@__ikg.05 en Instagram)\n') + chalk.gray('         ────────────────────────────\n'))
 
 const botTypes = [
   { name: 'SubBot', folder: './Sessions/Subs', starter: startSubBot },
@@ -117,25 +146,40 @@ function clearSession() {
 }
 
 let opcion;
-if (methodCodeQR) {
-  opcion = "1";
-} else if (methodCode) {
+if (hasSessionFile) {
+  // Ya existe credencial guardada: no preguntar nada, conectar directo.
+  opcion = "0";
+  console.log(chalk.gray("[ ✿ ] Sesión existente detectada, cargando..."));
+} else if (methodCodeByEnv) {
+  // PAIRING_METHOD=code + PAIRING_NUMBER desde .env: sin preguntar, sin readline.
   opcion = "2";
-  if (!phoneNumber) {
-    console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
-    phoneInput = readlineSync.question("");
-    phoneNumber = normalizePhone(phoneInput);
-  }
-} else if (!fs.existsSync("./Sessions/Owner/creds.json")) {
-  opcion = readlineSync.question(chalk.bold.white("\nSeleccione una opción:\n") + chalk.blueBright("1. Con código QR\n") + chalk.cyan("2. Con código de texto de 8 dígitos\n--> "));
-  while (!/^[1-2]$/.test(opcion)) {
-    console.log(chalk.bold.redBright(`No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`));
-    opcion = readlineSync.question("--> ");
-  }
-  if (opcion === "2") {
-    console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
-    phoneInput = readlineSync.question("");
-    phoneNumber = normalizePhone(phoneInput);
+  phoneNumber = normalizePhone(envNumber);
+  console.log(chalk.gray(`[ ✿ ] Vinculación por código (número desde .env: ${phoneNumber || '?'} )`));
+} else if (methodCodeQR) {
+  opcion = "1";
+} else if (methodCodeArg) {
+  opcion = "2";
+  console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
+  phoneInput = readlineSync.question("");
+  phoneNumber = normalizePhone(phoneInput);
+} else {
+  // Primer arranque, sin consola no-interactiva detectada.
+  // process.stdin.isTTY es false en paneles/hostings: evita colgar readline.
+  const isInteractive = process.stdin.isTTY !== false;
+  if (!isInteractive) {
+    log.warn("No hay consola interactiva y no hay sesión guardada. Usa --qr, --code o configura .env");
+    opcion = "1";
+  } else {
+    opcion = readlineSync.question(chalk.bold.white("\nSeleccione una opción:\n") + chalk.blueBright("1. Con código QR\n") + chalk.cyan("2. Con código de texto de 8 dígitos\n--> "));
+    while (!/^[1-2]$/.test(opcion)) {
+      console.log(chalk.bold.redBright(`No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`));
+      opcion = readlineSync.question("--> ");
+    }
+    if (opcion === "2") {
+      console.log(chalk.bold.redBright(`\nPor favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright("Ejemplo: +57301******")}\n${chalk.bold.magentaBright('---> ')}`));
+      phoneInput = readlineSync.question("");
+      phoneNumber = normalizePhone(phoneInput);
+    }
   }
 }
 
@@ -288,6 +332,8 @@ export async function startBot() {
       if (!botReady) {
         botReady = true;
         warmupGroups(sock);
+        // Resolver JID del canal oficial para mostrar el botón "Ver canal"
+        resolveChannel(sock, db).catch(()=>{});
       }
     }
     if (isNewLogin) log.info("Nuevo dispositivo detectado");
@@ -334,6 +380,8 @@ setInterval(cleanCache, 60 * 60 * 1000);
 cleanCache();
 
 (async () => {
+  // Iniciar servidor HTTP de health check LO PRIMERO (BoxMine/paneles).
+  startServer();
   await initDB();
   await cmdsLoader();
   await startBot();

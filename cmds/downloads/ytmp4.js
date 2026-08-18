@@ -16,7 +16,7 @@ const cmd = {
       const url = await getYoutubeUrl(input)
       const data = await getFareVideo(url)
 
-      if (!data?.status || !data?.descarga?.url) {
+      if (!data?.status || !data?.datos?.url) {
         return msg.reply('《✧》No se pudo descargar el *video*, intenta más tarde.')
       }
 
@@ -25,7 +25,7 @@ const cmd = {
       const duration = data.duracion || 'Desconocido'
       const views = Number(data.vistas || 0).toLocaleString('es-HN')
       const thumbnail = data.miniatura || null
-      const download = data.descarga
+      const download = data.datos
       const quality = download.calidad || '360p'
       const file_name = sanitizeFileName(title) + '.mp4'
 
@@ -147,7 +147,7 @@ async function getFareVideo(url) {
     throw new Error(data?.message || 'La API no devolvió un resultado válido.')
   }
 
-  if (!data?.descarga?.url) {
+  if (!data?.datos?.url) {
     throw new Error('La API no devolvió la URL de descarga.')
   }
 

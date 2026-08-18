@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import defaultAvatar from '../../lib/default-avatar.js';
 
 const regex = /^(?:https:\/\/|git@)github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?$/i;
 
@@ -26,7 +27,7 @@ export default {
         if (!zipName) zipName = `${repo}-${user}.zip`;
         zipBuffer = Buffer.from(await zipRes.arrayBuffer());
         repos.push(repoData);
-        image = 'https://cdn.yuki-wabot.my.id/files/MqnN.jpeg';
+        image = defaultAvatar();
       } else {
         const res = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(text)}`);
         const json = await res.json();

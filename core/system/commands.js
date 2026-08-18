@@ -1,4 +1,4 @@
-export const bodyMenu = `> 𖧧 ¡Hola! *@$sender*, Soy *$namebot*, Aquí tienes la lista de comandos$cat
+export const bodyMenu = `> 𖧧 ¡Hola *@$sender*! Soy *$namebot*, aquí tienes la lista de comandos$cat
 
 ╭┈ࠢ͜┅ࠦ͜͜╾݊͜─ؕ͜─ׄ͜─֬͜─֟͜─֫͜─ׄ͜─ؕ͜─݊͜┈ࠦ͜┅ࠡ͜͜┈࠭͜͜۰۰͜۰
 │✿ *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* $owner
@@ -7,7 +7,7 @@ export const bodyMenu = `> 𖧧 ¡Hola! *@$sender*, Soy *$namebot*, Aquí tienes
 │⚘ *sʏsᴛᴇᴍ/ᴏᴘʀ ::* $device
 │○ *ᴛɪᴍᴇ ::* $tiempo, $tempo
 │𓏸 *ᴜsᴇʀs ::* $users
-│○ *ᴜʀʟ ::* $link
+│𓍯 *ɪɴsᴛᴀɢʀᴀᴍ ::* $instagram
 ╰ׅ┈ࠢ͜─ׄ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴ ⋱࣭ ᩴ  ⋮֔   ᩴ ⋰╶͜─ׄ͜─ׄ֟፝͜─ׄ͜─ׄ͜┈ࠢ͜╯ׅ
 > Vincula un *Socket* con tu número utilizando *$prefixqr* o *$prefixcode*.
 ‧꒷︶꒷꒥꒷‧₊˚꒷︶꒷꒥꒷︶꒷˚₊‧꒷꒥꒷︶꒷‧`
@@ -129,6 +129,8 @@ downloads: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *DOWNLOAD* 𐦯╶͜─
 > Descargar un video de TikTok.
 ꕤ *$prefixtwitter » $prefixx* + <url>
 > Descargar un video/imagen de Twitter/X.
+ꕤ *$prefixdeezer » $prefixdzr* + <canción>
+> Buscar música en Deezer (preview 30s).
 ꕤ *$prefixytsearch » $prefixsearch » $prefixys* + <query>
 > Buscar videos de YouTube.
 ꕤ *$prefiximagen » $prefiximg » $prefiximage* + <query>
@@ -241,6 +243,25 @@ stickers: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *STICKERS* 𐦯╶͜─�
 ꕤ *$prefixbrat » $prefixbratv » $prefixqc » $prefixemojimix* + <text|mention>
 > Crear stickers con texto.
 ╰ׅ͜─֟͜─͜─ٞ͜─͜─๊͜─͜─๋͜─⃔═̶፝֟͜═̶⃔─๋͜─͜─͜─๊͜─ٞ͜─͜─֟͜┈ࠢ͜╯ׅ`,
+fun: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *DIVERSIÓN* 𐦯╶͜─ׄ͜─ׄ֟፝͜─ׄ͜─ׄ͜
+> ✐ Comandos divertidos para el grupo.
+ꕤ *$prefixchiste*
+> Un chiste aleatorio.
+ꕤ *$prefixdato » $prefixdatointeresante*
+> Un dato curioso aleatorio.
+ꕤ *$prefixconsejo*
+> Un consejo del día.
+ꕤ *$prefixpiropo*
+> Un piropo al azar.
+ꕤ *$prefix8ball » $prefix8bola* + <pregunta>
+> Bola 8 mágica (respuestas sí/no).
+ꕤ *$prefixlove » $prefixship* + <@usuario>
+> Calculadora de compatibilidad amorosa.
+ꕤ *$prefixdado* [caras]
+> Lanzar un dado (por defecto 6 caras).
+ꕤ *$prefixmoneda » $prefixcoin*
+> Lanzar una moneda (cara o cruz).
+╰ׅ͜─֟͜─͜─ٞ͜─͜─๊͜─͜─๋͜─⃔═̶፝֟͜═̶⃔─๋͜─͜─͜─๊͜─ٞ͜─͜─֟͜┈ࠢ͜╯ׅ`,
 utils: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *UTILITIES* 𐦯╶͜─ׄ͜─ׄ֟፝͜─ׄ͜
 > ✐ Comandos de Útilidades.
 ꕤ *$prefixmenu » $prefixhelp » $prefixayuda* + <category>
@@ -257,8 +278,8 @@ utils: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *UTILITIES* 𐦯╶͜─ׄ�
 > Enviar una sugerencia a los moderadores.
 ꕤ *$prefixinvitar » $prefixinvite* + <link>
 > Invitar el bot a un grupo.
-ꕤ *$prefixia » $prefixchatgpt* + <query>
-> Realizar peticiones a chatgpt.
+ꕤ *$prefixai » $prefixia » $prefixchatgpt » $prefixgemini* + <query>
+> Chatear con la IA (Gemini con memoria). Usa *$prefixai reset* para borrar memoria.
 ꕤ *$prefixgetpic » $prefixpfp* + <mention>
 > Ver la foto de perfil de un usuario.
 ꕤ *$prefixtoimage » $prefixtoimg* + <cite / sticker>
@@ -279,6 +300,28 @@ utils: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *UTILITIES* 𐦯╶͜─ׄ�
 > Ver información de grupos/canales de WhatsApp.
 ꕤ *$prefixread » $prefixreadviewonce* + <cite / image|video>
 > Convertir imagen/video de una vista a contenido.
+ꕤ *$prefixencuesta » $prefixpoll* + <pregunta|opción1|opción2...>
+> Crear una encuesta interactiva nativa de WhatsApp.
+ꕤ *$prefixqrcode » $prefixqrgen » $prefixmakeqr* + <texto|url>
+> Generar un código QR.
+ꕤ *$prefixacortar » $prefixshorturl* + <url>
+> Acortar un enlace con TinyURL.
+ꕤ *$prefixmorse » $prefixdemorse* + <texto|código>
+> Convertir texto a código morse (y viceversa).
+ꕤ *$prefixrecordar » $prefixalarma* + <minutos>|<mensaje>
+> Programar un recordatorio.
+ꕤ *$prefixwastalk » $prefixinfowa* + <número|@usuario>
+> Ver información pública de un número en WhatsApp.
+ꕤ *$prefixtts » $prefixvoz » $prefixdecirvoz » $prefixspeak* + <texto>
+> Convertir texto a nota de voz con voz femenina en español.
+ꕤ *$prefixletra » $prefixlyrics* + <artista>/<canción>
+> Buscar la letra de una canción.
+ꕤ *$prefixbtc » $prefixcrypto* + [moneda]
+> Precio de criptomonedas (BTC, ETH, SOL...).
+ꕤ *$prefixcarbon » $prefixcodigoimg* <tema> + <código>
+> Convertir código en una imagen bonita.
+ꕤ *$prefixgh » $prefixgithubstalk* + <usuario>
+> Ver información de un usuario de GitHub.
 ╰ׅ͜─֟͜─͜─ٞ͜─͜─๊͜─͜─๋͜─⃔═̶፝֟͜═̶⃔─๋͜─͜─͜─๊͜─ٞ͜─͜─֟͜┈ࠢ͜╯ׅ`,
 grupo: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *GROUPS* 𐦯╶͜─ׄ͜─ׄ֟፝͜─ׄ͜─ׄ͜
 > ✐ Comandos para administradores de grupos.
@@ -359,7 +402,11 @@ nsfw: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *NSFW* 𐦯╶͜─ׄ͜─ׄ
 > Buscar imagenes en Rule34.
 ╰ׅ͜─֟͜─͜─ٞ͜─͜─๊͜─͜─๋͜─⃔═̶፝֟͜═̶⃔─๋͜─͜─͜─๊͜─ٞ͜─͜─֟͜┈ࠢ͜╯ׅ`,
 anime: `╭┈ࠢ͜─ׄ֟፝͜─ׄ͜─ׄ͜╴𐔌 *ANIME* 𐦯╶͜─ׄ͜─ׄ֟፝͜─ׄ͜─ׄ͜
-> ✐ Comandos de reacciones de Anime.
+> ✐ Comandos de Anime, reacciones y búsquedas.
+ꕤ *$prefixanime » $prefixanibusc* + <nombre>
+> Buscar información de un anime (AniList).
+ꕤ *$prefixserieinfo » $prefixainfo* + <nombre>
+> Ver info de series del gacha.
 ꕤ *$prefixwaifu » $prefixneko*
 > Buscar una waifu aleatoria.
 ꕤ *$prefixppcouple » $prefixppcp*

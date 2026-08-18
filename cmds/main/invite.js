@@ -1,3 +1,4 @@
+import defaultAvatar from '../../lib/default-avatar.js';
 import db from '#db';
 const linkRegex = /chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})(?:\s+[0-9]{1,3})?/i;
 
@@ -37,7 +38,7 @@ export default {
     }
     const isOficialBot = botId === ((global.sock?.user?.id?.split(':')[0] ?? null) && ((global.sock?.user?.id?.split(':')[0] ?? null) && (global.sock.user.id.split(':')[0] + '@s.whatsapp.net')));
     const botType = isOficialBot ? 'Principal/Owner' : 'Sub Bot';
-    const pp = await sock.profilePictureUrl(msg.sender, 'image').catch(() => 'https://cdn.yuki-wabot.my.id/files/2PVh.jpeg');
+    const pp = await sock.profilePictureUrl(msg.sender, 'image').catch(() => defaultAvatar());
     const userName = user?.name || 'Usuario';
     const sugg = `❀ 𝗦𝗢𝗟𝗜𝗖𝗜𝗧𝗨𝗗 𝗥𝗘𝗖𝗜𝗕𝗜𝗗𝗔
     

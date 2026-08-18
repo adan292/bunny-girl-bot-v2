@@ -1,61 +1,72 @@
 import FormData from 'form-data';
-import axios from 'axios';
+import fetch from 'node-fetch';
 import db from '#db';
 
-const generateUniqueFilename = (mime) => {
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function generateUniqueFilename(mime) {
   const ext = (mime || 'image/jpeg').split('/')[1]?.split(';')[0] || 'jpg';
   return `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 }
 
-const uploadAdoFiles = async (buffer, mime) => {
-  const filename = generateUniqueFilename(mime)
-  const res = await axios.post("https://cdn.adoolab.xyz/api/upload", {
-    filename,
-    data: buffer.toString('base64'),
-    expiration: "never"
-  }, {
-    headers: {
-      "Content-Type": "application/json"
-    },
-    maxContentLength: Infinity,
-    maxBodyLength: Infinity
-  })
+/**
+ * Sube un buffer a litterbox.catbox.moe (servicio temporal sin API key).
+ * Acepta cualquier tipo de archivo (imagen, video, audio, sticker).
+ * Devuelve una URL directa.
+ *
+ * @param {Buffer} buffer
+ * @param {string} mime
+ * @param {'1h'|'12h'|'24h'|'72h'} time
+ * @returns {Promise<string>}
+ */
+async function uploadLitterbox(buffer, mime, time = '24h') {
+  const form = new FormData();
+  form.append('reqtype', 'fileupload');
+  form.append('time', time);
+  form.append('fileToUpload', buffer, {
+    filename: generateUniqueFilename(mime),
+    contentType: mime
+  });
 
-  const url = res.data?.url
-  if (!url || typeof url !== "string" || !url.startsWith("https://"))
-    throw new Error("Respuesta inválida de AdoFiles: " + JSON.stringify(res.data))
-
-  return url
-}
-
-const uploadFare = async (buffer, mime) => {
-  const form = new FormData()
-  form.append("file", buffer, generateUniqueFilename(mime))
-  const res = await axios.post("https://u.fare.ink/api/upload", form, { headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity })
-  const url = res.data?.file?.publicUrl
-  if (!url || typeof url !== "string" || !url.startsWith("https://"))
-    throw new Error("Respuesta inválida de Fare: " + JSON.stringify(res.data))
-  return url
-}
-
-const uploadUguu = async (buffer, mime) => {
-  const form = new FormData()
-  form.append("files[]", buffer, generateUniqueFilename(mime))
-  const res = await axios.post("https://uguu.se/upload.php", form, { headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity })
-  const url = res.data?.files?.[0]?.url
-  if (!url) throw new Error("Respuesta inválida de Uguu: " + JSON.stringify(res.data))
-  return url
-}
-
-const uploadAuto = async (buffer, mime) => {
-  for (const [fn, name] of [
-    [() => uploadAdoFiles(buffer, mime), "adofiles"],
-    [() => uploadFare(buffer, mime), "fare"],
-    [() => uploadUguu(buffer, mime), "uguu"]
-  ]) {
-    try { return { link: await fn(), server: name } } catch {}
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 45000);
+  let res, text;
+  try {
+    res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+      method: 'POST',
+      body: form.getBuffer(),
+      headers: form.getHeaders(),
+      signal: ctrl.signal
+    });
+    text = (await res.text()).trim();
+  } finally {
+    clearTimeout(timer);
   }
-  throw new Error("Todos los servidores fallaron")
+  if (!res.ok || !text.startsWith('https://')) {
+    throw new Error('Litterbox falló: HTTP ' + res.status + ' - ' + text.slice(0, 120));
+  }
+  return text;
+}
+
+/**
+ * Intenta subir con varios tiempos de expiración para mayor robustez.
+ */
+async function uploadConReintentos(buffer, mime) {
+  const tiempos = ['24h', '72h', '1h'];
+  let ultimoErr;
+  for (const t of tiempos) {
+    for (let i = 1; i <= 2; i++) {
+      try {
+        const url = await uploadLitterbox(buffer, mime, t);
+        return { url, tiempo: t };
+      } catch (e) {
+        ultimoErr = e;
+        console.log(`[tourl] ⚠️ litterbox (${t}) intento ${i} falló: ${e.message}`);
+        await sleep(1000 * i);
+      }
+    }
+  }
+  throw ultimoErr || new Error('No se pudo subir el archivo');
 }
 
 const formatBytes = (bytes) => {
@@ -64,34 +75,44 @@ const formatBytes = (bytes) => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+};
 
 export default {
   command: ['tourl'],
   category: 'utils',
-  description: 'Convertir una imagen en un enlace.',
+  description: 'Convertir una imagen/video/sticker respondido en un enlace.',
   run: async ({ msg, sock, args, usedPrefix, command }) => {
-    const q = msg.quoted || msg
-    const mime = (q.msg || q).mimetype || ''
+    const q = msg.quoted || msg;
+    const mime = (q.msg || q).mimetype || '';
     if (!mime) {
-      return sock.reply(msg.chat, `《✧》 Por favor, responde a una imagen o video con *${usedPrefix + command} [servidor]* para convertirlo en URL.\n\n✿ Servidores disponibles:\n> › adofiles (permanente)\n> › fare\n> › uguu (temporal, 3h)\n> › auto (selecciona automáticamente)`, msg)
+      return sock.reply(msg.chat,
+        `《✧》 Responde a una imagen, video, audio o sticker con *${usedPrefix + command}* para subirlo y obtener un enlace.\n\n> El archivo se sube a litterbox.catbox.moe (enlace temporal 24h, sin API key).`,
+        msg);
     }
     try {
-      const media = await q.download()
-      if (!media) return sock.reply(msg.chat, "ꕥ No se pudo descargar el archivo.", msg)
-      const serverArg = args[0]?.toLowerCase() || "adofiles"
-      const servers = {
-        adofiles: () => uploadAdoFiles(media, mime).then(link => ({ link, server: "adofiles" })),
-        fare: () => uploadFare(media, mime).then(link => ({ link, server: "fare" })),
-        uguu: () => uploadUguu(media, mime).then(link => ({ link, server: "uguu" })),
-        auto: () => uploadAuto(media, mime)
+      await msg.react('🕒');
+      const media = await q.download();
+      if (!media) {
+        await msg.react('✖️');
+        return sock.reply(msg.chat, 'ꕥ No se pudo descargar el archivo.', msg);
       }
-      if (!servers[serverArg]) return sock.reply(msg.chat, `ꕥ Servidor no válido. Actuales disponibles: adofiles, fare, uguu o auto`, msg)
-      const { link, server } = await servers[serverArg]()
-      const user = db.getUser(msg.sender)
-      await sock.reply(msg.chat, `𖹭 ❀ *Upload To ${server.toUpperCase()}*\n\nׅ  ׄ  ✿   ׅ り *Link ›* ${link}\nׅ  ׄ  ✿   ׅ り *Peso ›* ${formatBytes(media.length)}\nׅ  ׄ  ✿   ׅ り *Tipo ›* ${mime.split("/")[1].toUpperCase() || "UNKNOWN"}\nׅ  ׄ  ✿   ׅ り *Solicitado por ›* ${user?.name || msg.pushName || 'Usuario'}`, msg);
+
+      const { url, tiempo } = await uploadConReintentos(media, mime);
+      const user = db.getUser(msg.sender);
+
+      await sock.reply(msg.chat,
+        `𖹭 ❀ *Upload To URL*\n\n` +
+        `ׅ  ׄ  ✿   ׅ り *Enlace ›* ${url}\n` +
+        `ׅ  ׄ  ✿   ׅ り *Expira ›* ${tiempo}\n` +
+        `ׅ  ׄ  ✿   ׅ り *Peso ›* ${formatBytes(media.length)}\n` +
+        `ׅ  ׄ  ✿   ׅ り *Tipo ›* ${(mime.split("/")[1] || "desconocido").toUpperCase()}\n` +
+        `ׅ  ׄ  ✿   ׅ り *Solicitado por ›* ${user?.name || msg.pushName || 'Usuario'}`,
+        msg);
+      await msg.react('✔️');
     } catch (e) {
-      await sock.reply(msg.chat, `> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`, msg);
+      console.error('[tourl] error:', e);
+      await msg.react('✖️');
+      await sock.reply(msg.chat, `> Error al subir el archivo: ${e?.message || 'error desconocido'}\n> Intenta de nuevo en unos segundos.`, msg);
     }
   }
-}
+};

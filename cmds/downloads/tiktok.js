@@ -1,69 +1,179 @@
 import fetch from 'node-fetch'
 
+const MAX_REINTENTOS = 3
+const ESPERA_BASE_MS = 1500
+const dormir = ms => new Promise(r => setTimeout(r, ms))
+
+async function fetchJson(url, opciones = {}, intentos = MAX_REINTENTOS) {
+  let ultimoError
+  for (let intento = 1; intento <= intentos; intento++) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 25000)
+    try {
+      const res = await fetch(url, {
+        ...opciones,
+        signal: ctrl.signal,
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'accept': 'application/json',
+          'referer': 'https://www.tikwm.com/',
+          ...(opciones.headers || {})
+        }
+      })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return await res.json()
+    } catch (e) {
+      ultimoError = e
+      console.log(`[tiktok] ⚠️ Intento ${intento} falló: ${e.message}`)
+      clearTimeout(timer)
+      if (intento < intentos) await dormir(ESPERA_BASE_MS * intento)
+    }
+  }
+  throw ultimoError || new Error('Fallaron todos los intentos')
+}
+
+async function fetchBuffer(url, intentos = 2) {
+  let ultimoError
+  for (let i = 1; i <= intentos; i++) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 30000)
+    try {
+      const res = await fetch(url, {
+        signal: ctrl.signal,
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120',
+          'referer': 'https://www.tikwm.com/'
+        }
+      })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return Buffer.from(await res.arrayBuffer())
+    } catch (e) {
+      ultimoError = e
+      clearTimeout(timer)
+      if (i < intentos) await dormir(1000 * i)
+    }
+  }
+  throw ultimoError
+}
+
 export default {
   command: ['tiktok', 'tt'],
   category: 'downloads',
   description: 'Descargar un video de TikTok.',
   run: async ({ msg, sock, args, usedPrefix, command }) => {
     if (!args.length) {
-      return msg.reply(`《✧》 Por favor, ingresa un término de búsqueda o enlace de TikTok.`)
+      return msg.reply(
+        `《✧》 Por favor, ingresa un enlace de TikTok.\n` +
+        `Ejemplo: *${usedPrefix}tiktok* https://vt.tiktok.com/xxxxx`
+      )
     }
-    const text = args.join(" ")
-    const isUrl = /(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)
-    const endpoint = isUrl ? `${global.APIs.yuki.url}/dl/tiktok?url=${encodeURIComponent(text)}&key=${global.APIs.yuki.key}` : `${global.APIs.yuki.url}/search/tiktok?query=${encodeURIComponent(text)}&key=${global.APIs.yuki.key}`
+    const text = args.join(' ').trim()
+    const isUrl = /(?:https?:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok\.com\/[^\s&]+/i.test(text)
+    if (!isUrl) {
+      return msg.reply('《✧》 Por favor ingresa un enlace *válido* de TikTok.')
+    }
+
+    // Extraer URL limpia (si es vm.tiktok.com o vt.tiktok.com seguir redirect)
+    let url = text.match(/(?:https?:\/\/)?(?:vm|vt|www|t)\.?tiktok\.com\/[^\s&]+/i)?.[0]
+    if (!url) return msg.reply('《✧》 No se pudo extraer el enlace.')
+    if (!/^https?:\/\//.test(url)) url = 'https://' + url.replace(/^\/+/, '')
+
     try {
-      const res = await fetch(endpoint)
-      if (!res.ok) throw new Error(`El servidor respondió con ${res.status}`)
-      const json = await res.json()
-      if (!json.status) return msg.reply('《✧》 No se encontró contenido válido en TikTok.')
-      if (isUrl) {
-        const { title, duration, dl, author, stats, created_at, type } = json.data
-        if (!dl || (Array.isArray(dl) && dl.length === 0)) return msg.reply('《✧》 Enlace inválido o sin contenido descargable.')
-        const caption = `ㅤ۟∩　ׅ　★ ໌　ׅ　🅣𝗂𝗄𝖳𝗈𝗄 🅓ownload　ׄᰙ
+      await msg.react('🕒')
 
-𖣣ֶㅤ֯⌗ ✎  ׄ ⬭ *Título:* ${title || 'Sin título'}
-𖣣ֶㅤ֯⌗ ꕥ  ׄ ⬭ *Autor:* ${author?.nickname || author?.unique_id || 'Desconocido'}
-𖣣ֶㅤ֯⌗ ⴵ  ׄ ⬭ *Duración:* ${duration || 'N/A'}
-𖣣ֶㅤ֯⌗ ❖  ׄ ⬭ *Likes:* ${(stats?.likes || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ❀  ׄ ⬭ *Comentarios:* ${(stats?.comments || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ✿  ׄ ⬭ *Vistas:* ${(stats?.views || stats?.plays || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ☆  ׄ ⬭ *Compartidos:* ${(stats?.shares || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ☁︎  ׄ ⬭ *Fecha:* ${created_at || 'N/A'}`.trim()
-        if (type === 'image') {
-          const medias = dl.map(url => ({ type: 'image', data: { url }, caption }))
-          await sock.sendAlbumMessage(msg.chat, medias, { quoted: msg })
-          const audioRes = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(text)}&hd=1`)
-          const audioJson = await audioRes.json()
-          const audioUrl = audioJson?.data?.play
-          if (audioUrl) {
-            await sock.sendMessage(msg.chat, { audio: { url: audioUrl }, mimetype: 'audio/mp4', fileName: 'tiktok_audio.mp4' }, { quoted: msg })
-          }
-        } else {
-          const videoUrl = Array.isArray(dl) ? dl[0] : dl
-          await sock.sendMessage(msg.chat, { video: { url: videoUrl }, caption }, { quoted: msg })
-        }
-      } else {
-        const validResults = json.data?.filter(v => v.dl)
-        if (!validResults || validResults.length < 2) {
-          return msg.reply('《✧》 Se requieren al menos 2 resultados válidos con contenido.')
-        }
-        const medias = validResults.filter(v => typeof v.dl === 'string' && v.dl.startsWith('http')).map(v => {
-            const caption = `ㅤ۟∩　ׅ　★ ໌　ׅ　🅣𝗂𝗄𝖳𝗈𝗄 🅓ownload　ׄᰙ
-
-𖣣ֶㅤ֯⌗ ✎  ׄ ⬭ *Título:* ${v.title || 'Sin título'}
-𖣣ֶㅤ֯⌗ ꕥ  ׄ ⬭ *Autor:* ${v.author?.nickname || 'Desconocido'} ${v.author?.unique_id ? `@${v.author.unique_id}` : ''}
-𖣣ֶㅤ֯⌗ ⴵ  ׄ ⬭ *Duración:* ${v.duration || 'N/A'}
-𖣣ֶㅤ֯⌗ ❖  ׄ ⬭ *Likes:* ${(v.stats?.likes || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ❀  ׄ ⬭ *Comentarios:* ${(v.stats?.comments || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ✿  ׄ ⬭ *Vistas:* ${(v.stats?.views || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ☆  ׄ ⬭ *Compartidos:* ${(v.stats?.shares || 0).toLocaleString()}
-𖣣ֶㅤ֯⌗ ❒  ׄ ⬭ *Audio:* ${v.music?.title || `[${v.author?.nickname || 'No disponible'}] original sound - ${v.author?.unique_id || 'unknown'}`}`.trim()
-            return { type: 'video', data: { url: v.dl }, caption }
-          }).slice(0, 10)
-        await sock.sendAlbumMessage(msg.chat, medias, { quoted: msg })
+      // tikwm.com — sin API key, devuelve cover, play (sin marca de agua), hdplay, music, stats
+      const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`
+      const json = await fetchJson(apiUrl)
+      if (json.code !== 0 || !json.data) {
+        throw new Error(json.msg || 'No se pudo obtener el video')
       }
+      const d = json.data
+      const videoUrl = d.hdplay || d.play || d.wmplay
+      if (!videoUrl) throw new Error('No hay enlace de video')
+
+      const author = d.author || {}
+      const stats = {
+        likes: d.digg_count || 0,
+        comments: d.comment_count || 0,
+        shares: d.share_count || 0,
+        views: d.play_count || 0
+      }
+      const caption =
+        `ㅤ۟∩　ׅ　★ ໌　ׅ　🅣𝗂𝗄𝖳𝗈𝗄 🅓ownload　ׄᰙ\n\n` +
+        `𖣣ֶㅤ֯⌗ ✎  ׄ ⬭ *Título:* ${d.title || 'Sin título'}\n` +
+        `𖣣ֶㅤ֯⌗ ꕥ  ׄ ⬭ *Autor:* ${author.nickname || author.unique_id || 'Desconocido'}${author.unique_id ? ' @' + author.unique_id : ''}\n` +
+        `𖣣ֶㅤ֯⌗ ⴵ  ׄ ⬭ *Duración:* ${d.duration ? d.duration + 's' : 'N/A'}\n` +
+        `𖣣ֶㅤ֯⌗ ❖  ׄ ⬭ *Likes:* ${Number(stats.likes).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯⌗ ❀  ׄ ⬭ *Comentarios:* ${Number(stats.comments).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯⌗ ✿  ׄ ⬭ *Vistas:* ${Number(stats.views).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯⌗ ☆  ׄ ⬭ *Compartidos:* ${Number(stats.shares).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯⌗ ❒  ׄ ⬭ *Sonido:* ${d.music_info?.title || 'audio original'}`.trim()
+
+      // Enviar miniatura con info SI la cover es accesible; si no, enviar solo el caption
+      const coverSent = await (async () => {
+        if (!d.cover) return false
+        try {
+          const coverBuf = await fetchBuffer(d.cover)
+          if (!coverBuf || coverBuf.length < 200) return false
+          await sock.sendMessage(msg.chat, {
+            image: coverBuf,
+            caption
+          }, { quoted: msg })
+          return true
+        } catch (e) {
+          console.log('[tiktok] cover falló, enviando sin miniatura:', e.message)
+          return false
+        }
+      })()
+      if (!coverSent) await msg.reply(caption)
+
+      // Enviar video con Buffer (descargamos a buffer para evitar links firmados que expiren)
+      const videoBuf = await fetchBuffer(videoUrl)
+      if (videoBuf && videoBuf.length > 1024) {
+        await sock.sendMessage(msg.chat, {
+          video: videoBuf,
+          mimetype: 'video/mp4',
+          fileName: `tiktok_${d.id || Date.now()}.mp4`
+        }, { quoted: msg })
+      } else {
+        // Fallback: enviar por URL si la descarga a buffer falló
+        await sock.sendMessage(msg.chat, {
+          video: { url: videoUrl },
+          mimetype: 'video/mp4',
+          caption: '⚠️ Video enviado por enlace directo (calidad puede variar).'
+        }, { quoted: msg })
+      }
+
+      // Enviar audio/música si existe
+      if (d.music) {
+        try {
+          const audioBuf = await fetchBuffer(d.music)
+          if (audioBuf && audioBuf.length > 1024) {
+            await sock.sendMessage(msg.chat, {
+              audio: audioBuf,
+              mimetype: 'audio/mpeg',
+              fileName: sanitize(d.music_info?.title || 'tiktok_audio') + '.mp3'
+            }, { quoted: msg })
+          }
+        } catch (e) {
+          console.log('[tiktok] audio falló:', e.message)
+        }
+      }
+
+      await msg.react('✔️')
     } catch (e) {
-      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`)
+      console.error('[tiktok] error:', e)
+      await msg.react('✖️')
+      await msg.reply(
+        `> Error al descargar de TikTok después de ${MAX_REINTENTOS} intentos: ${e?.message || 'error desconocido'}\n` +
+        `> Verifica que el enlace sea público y no haya sido eliminado, e intenta de nuevo.`
+      )
     }
-  },
+  }
+}
+
+function sanitize(s = 'audio') {
+  return String(s).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'audio'
 }

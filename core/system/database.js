@@ -116,12 +116,12 @@ export const defSets = {
   prefix: '[\"/\",\"!\",\".\",\"#\"]',
   commandsejecut: 0,
   newsletter_id: '',
-  nameid: 'Bunny Girl Bot',
+  nameid: '',
   type: 'Owner',
-  link: 'https://github.com/adan292/bunny-girl-bot-v2',
-  banner: 'https://cdn.yuki-wabot.my.id/files/tCVD.jpeg',
-  icon: 'https://cdn.yuki-wabot.my.id/files/4U5V.jpeg',
-  currency: 'Yenes',
+  link: '',
+  banner: '',
+  icon: '',
+  currency: 'Monedas',
   namebot: 'Bunny Girl',
   botname: 'Bunny Girl Bot',
   owner: ''
@@ -189,11 +189,11 @@ export function initDB() {
       prefix TEXT DEFAULT '[\"/\",\"!\",\".\",\"#\"]',
       commandsejecut INTEGER DEFAULT 0,
       newsletter_id TEXT DEFAULT '',
-      nameid TEXT DEFAULT 'Bunny Girl Bot',
+      nameid TEXT DEFAULT '',
       type TEXT DEFAULT 'Owner',
-      link TEXT DEFAULT 'https://github.com/adan292/bunny-girl-bot-v2',
-      banner TEXT DEFAULT 'https://cdn.yuki-wabot.my.id/files/tCVD.jpeg',
-      icon TEXT DEFAULT 'https://cdn.yuki-wabot.my.id/files/4U5V.jpeg',
+      link TEXT DEFAULT '',
+      banner TEXT DEFAULT '',
+      icon TEXT DEFAULT '',
       currency TEXT DEFAULT 'Yenes',
       namebot TEXT DEFAULT 'Bunny Girl',
       botname TEXT DEFAULT 'Bunny Girl Bot',
@@ -514,6 +514,14 @@ try {
       }
     }
   }
+  // Limpieza: quitar restos de yuki-wabot en settings existentes (DBs antiguas)
+  try {
+    stmt(`UPDATE settings SET link = '' WHERE link LIKE '%yuki-wabot%'`).run();
+    stmt(`UPDATE settings SET banner = '' WHERE banner LIKE '%yuki-wabot%'`).run();
+    stmt(`UPDATE settings SET icon = '' WHERE icon LIKE '%yuki-wabot%'`).run();
+    stmt(`UPDATE settings SET newsletter_id = '' WHERE newsletter_id = '120363401404146384@newsletter'`).run();
+    stmt(`UPDATE settings SET nameid = '' WHERE nameid LIKE '%yuki%' OR nameid LIKE '%ყµҡเ%'`).run();
+  } catch (_) {}
 } catch (e) { console.error('[DB migration error]', e); }
 
 export function clearDB() {

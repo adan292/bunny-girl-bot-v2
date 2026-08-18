@@ -1,4 +1,5 @@
 import db from '#db';
+import defaultAvatar from '../../lib/default-avatar.js';
 export default {
   command: ['report', 'reporte', 'sug', 'suggest'],
   category: 'main',
@@ -29,7 +30,7 @@ export default {
     const tipo2 = esReporte ? 'ꕥ Reporte' : 'ꕥ Sugerencia';
     const name = user?.name || msg.pushName || 'Usuario desconocido';
     const numero = msg.sender.split('@')[0];
-    const pp = await sock.profilePictureUrl(msg.sender, 'image').catch(() => 'https://cdn.yuki-wabot.my.id/files/2PVh.jpeg');
+    const pp = await sock.profilePictureUrl(msg.sender, 'image').catch(() => defaultAvatar());
     const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
     const botSettings = db.getSettings(botId) || {};
     const isOficialBot = botId === ((global.sock?.user?.id?.split(':')[0] ?? null) && ((global.sock?.user?.id?.split(':')[0] ?? null) && (global.sock.user.id.split(':')[0] + '@s.whatsapp.net')));

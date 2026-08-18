@@ -65,7 +65,7 @@ async function getImageSearchResults(query) {
         return res.data.map(item => ({ url: item.url, title: item.origin?.title || null, domain: item.origin?.website?.domain || null, resolution: item.width && item.height ? `${item.width}x${item.height}` : null }));
       }
     },
-    { endpoint: `${global.APIs.yuki.url}/search/image?q=${encodeURIComponent(query)}&api_key=${global.APIs.yuki.key}`, extractor: (res) => {
+    { endpoint: `${global.APIs.Ginko.url}/search/image?q=${encodeURIComponent(query)}&api_key=${global.APIs.Ginko.key}`, extractor: (res) => {
         if (!res.status || !Array.isArray(res.result)) return [];
         return res.result.map(item => ({ url: item.image, title: item.title || null, domain: item.url ? new URL(item.url).hostname : null, resolution: null }));
       }

@@ -2,6 +2,7 @@ import { normalizeJid, resolveParticipantJid, resolveJidSync, deleteCachedMeta, 
 import chalk from 'chalk';
 import moment from 'moment-timezone';
 import db from '#db';
+import defaultAvatar from '../lib/default-avatar.js';
 
 function getGroupAdmins(participants) {
   return (participants ?? []).filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id).filter(Boolean);
@@ -44,7 +45,7 @@ export default async (sock, msg) => {
         const jid = resolveEventParticipant(p, sock);
         if (!jid) continue;
         const phone = jid.split('@')[0];
-        const pp = await sock.profilePictureUrl(jid, 'image').catch(() => 'https://files.yuki-wabot.my.id/cdn/2PVh.jpeg');
+        const pp = await sock.profilePictureUrl(jid, 'image').catch(() => defaultAvatar());
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
           let caption;
