@@ -29,25 +29,49 @@ Bot de WhatsApp **Multi-Device** basado en `baileys`, ligero y fácil de usar. T
 
 ---
 
-## 🚀 Instalación en Termux (Android)
+## 📦 Instalación en Termux (Android)
 
-```bash
-termux-setup-storage
-```
+> 📱 Copia y pega estos comandos **uno por uno** en Termux. No necesitas saber programar.
 
+### 1️⃣ Actualizar paquetes
 ```bash
 pkg update && pkg upgrade -y
-pkg install -y git nodejs-lts ffmpeg imagemagick yarn
 ```
 
+### 2️⃣ Instalar herramientas necesarias
+```bash
+pkg install -y git nodejs python ffmpeg imagemagick
+```
+
+> ⚠️ Usa el paquete `nodejs` (no `nodejs-lts`): el bot necesita **Node.js 22.5+** porque su base de datos SQLite es nativa de esa versión.
+
+### 3️⃣ Clonar el bot
 ```bash
 git clone https://github.com/adan292/bunny-girl-bot-v2
 cd bunny-girl-bot-v2
+```
+
+### 4️⃣ Instalar dependencias
+```bash
 npm install
-npm start
 ```
 
 > Si durante la instalación aparece **(Y/I/N/O/D/Z) [default=N] ?** escribe **"y"** y luego **ENTER** para continuar.
+
+### 5️⃣ (Opcional) Configurar tu key de Gemini para `.ai`
+Crea un archivo `config.private.js` dentro de la carpeta del bot con este contenido (usa la key que te den en el bot):
+
+```js
+// config.private.js
+export const geminiKey = "TU_KEY_DE_GEMINI_AQUI";
+export const geminiModel = "gemini-flash-latest";
+```
+
+### 6️⃣ Iniciar el bot
+```bash
+npm start
+```
+Escanea el QR con **WhatsApp → Dispositivos vinculados → Vincular dispositivo**, ¡y listo! 🐰
 
 ---
 
