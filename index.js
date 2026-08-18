@@ -160,7 +160,7 @@ async function startBot() {
 
   sock = await makeWASocket({
     ...(version ? { version } : {}),
-    auth: state,
+    auth: { creds: state.creds, keys: state.keys },
     logger: pino({ level: "silent" }),
     browser: Browsers.windows("Chrome"),
     markOnlineOnConnect: false
@@ -365,6 +365,24 @@ async function isAdmin(sock, jid, user) {
     return false;
   }
 }
+
+function safeRestart() {
+  if (reconnecting) return;
+  reconnecting = true;
+  try {
+    sock?.end?.(new Error("safe-restart"));
+  } catch {}
+  setTimeout(startBot, 4000);
+}
+
+process.on("uncaughtException", (e) => {
+  console.error("💥 Error no capturado:", e?.message || e);
+  safeRestart();
+});
+process.on("unhandledRejection", (e) => {
+  console.error("💥 Promesa rechazada:", e?.message || e);
+  safeRestart();
+});
 
 startBot().catch(e => {
   console.error("❌ Error fatal:", e);
