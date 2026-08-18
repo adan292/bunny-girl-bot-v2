@@ -4,7 +4,7 @@ const {
   DisconnectReason,
   fetchLatestBaileysVersion,
   Browsers
-} = require("@whiskeysockets/baileys");
+} = require("Baileys-Ruby");
 const fs = require("fs");
 const path = require("path");
 const readline = require("node:readline/promises");
@@ -158,7 +158,7 @@ async function startBot() {
     console.warn("⚠️ No se pudo consultar la versión de Baileys; usando la predeterminada.");
   }
 
-  sock = makeWASocket({
+  sock = await makeWASocket({
     ...(version ? { version } : {}),
     auth: state,
     logger: pino({ level: "silent" }),
