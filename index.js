@@ -86,6 +86,8 @@ global.conns = global.conns || [];
 const reconnecting = new Set();
 const msgStore = new Map();
 const msgLimit = 500;
+const SENT_KEY = '__sent__:';
+const MSG_STORE_MAX = 1000;
 
 async function loadBots() {
   for (const { name, folder, starter } of botTypes) {
@@ -260,7 +262,18 @@ export async function startBot() {
     emitOwnEvents: false,
     msgRetryCounterCache,
     cachedGroupMetadata: async (jid) => getCachedMeta(jid) ?? undefined,
-    getMessage: async (key) => msgStore.get(key.remoteJid + ':' + key.id),
+    getMessage: async (key) => {
+      // Buscar primero por jid:id (mensajes recibidos), luego por __sent__:id (enviados)
+      if (!key?.id) return undefined;
+      const byJid = key.remoteJid ? msgStore.get(key.remoteJid + ':' + key.id) : undefined;
+      if (byJid) {
+        // El store puede guardar el WAMessage.message directamente (recibidos) o {message} (enviados)
+        return byJid.message ? byJid.message : byJid;
+      }
+      const bySent = msgStore.get(SENT_KEY + key.id);
+      if (bySent) return bySent.message;
+      return undefined;
+    },
   });
 
   global.sock = sock;
@@ -268,6 +281,28 @@ export async function startBot() {
   sock.msgRetryCounterCache = msgRetryCounterCache;
   sock.ev.on("creds.update", saveCreds);
   sock.sendText = (jid, text, quoted = "", options) => sock.sendMessage(jid, { text, ...options }, { quoted });
+
+  // Fix "Esperando mensaje" / "Waiting for this message":
+  // Baileys necesita que getMessage pueda devolver el contenido de los mensajes
+  // que ENVIAMOS (no solo los recibidos) cuando WhatsApp pide retransmisión
+  // por fallo de cifrado E2E. Si no lo encuentra, el receptor se queda esperando.
+  const origSendMessage = sock.sendMessage.bind(sock);
+  sock.sendMessage = async (jid, content, opts) => {
+    const result = await origSendMessage(jid, content, opts);
+    try {
+      if (result?.key?.id) {
+        // Guardar tanto la clave por jid:id como la clave __sent__:id
+        const stored = { key: result.key, message: content };
+        msgStore.set(jid + ':' + result.key.id, stored);
+        msgStore.set(SENT_KEY + result.key.id, stored);
+        // Limitar tamaño
+        while (msgStore.size > MSG_STORE_MAX) {
+          msgStore.delete(msgStore.keys().next().value);
+        }
+      }
+    } catch {}
+    return result;
+  };
   sock.decodeJid = (jid) => {
     if (!jid) return jid;
     if (/:\d+@/gi.test(jid)) {
