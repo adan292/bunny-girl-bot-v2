@@ -81,7 +81,7 @@ console.log('\n')
   gradient: ['blue', 'magenta'],
   letterSpacing: 2
 })
-console.log(chalk.cyan('      🍁 Creado por Ginko-MD (@__ikg.05 en Instagram)\n') + chalk.gray('         ────────────────────────────\n'))
+console.log(chalk.cyan('      🍁 Creado por Adán (JH)\n') + chalk.gray('         ────────────────────────────\n'))
 
 const botTypes = [
   { name: 'SubBot', folder: './Sessions/Subs', starter: startSubBot },
