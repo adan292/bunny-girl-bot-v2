@@ -33,7 +33,7 @@
     "@vitalets/google-translate-api": "latest",
     "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
     "axios": "^0.24.0",
-    "baileys": "npm:@whiskeysockets/baileys@^4.22.0",
+    "baileys": "npm:@whiskeysockets/baileys@latest",
     "cfonts": "^3.3.0",
     "cheerio": "npm:cheerio@1.0.0-rc.12",
     "dotenv": "^16.6.1",
