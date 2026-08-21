@@ -35,7 +35,7 @@
     "axios": "^0.24.0",
     "baileys": "git+https://github.com/this-xys/WaSocket.git",
     "cfonts": "^3.3.0",
-    "chalk": "^4.1.2",
+    "@whiskeysockets/baileys": "github:naut21/Baileys",
     "cheerio": "npm:cheerio@1.0.0-rc.12",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
