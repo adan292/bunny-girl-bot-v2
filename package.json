@@ -56,5 +56,13 @@
     "syntax-error": "^1.4.0",
     "ws": "^8.21.3",
     "yt-search": "^2.10.4"
+  },
+  "overrides": {
+    "this-xys/libsignal-node": "git+https://github.com/this-xys/libsignal-node.git#3b4873ace67fdad36721ce37f753978f782406ae",
+    "libsignal": "git+https://github.com/this-xys/libsignal-node.git#3b4873ace67fdad36721ce37f753978f782406ae"
+  },
+  "resolutions": {
+    "this-xys/libsignal-node": "git+https://github.com/this-xys/libsignal-node.git#3b4873ace67fdad36721ce37f753978f782406ae",
+    "libsignal": "git+https://github.com/this-xys/libsignal-node.git#3b4873ace67fdad36721ce37f753978f782406ae"
   }
 }
