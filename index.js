@@ -1,5 +1,10 @@
 // Cargar variables de entorno desde .env (si existe). Lo hacemos LO MÁS TEMPRANO posible.
-import "dotenv/config";
+try {
+  await import('dotenv/config');
+} catch (e) {
+  // dotenv no está instalado o falló la carga — seguimos sin bloquear la ejecución
+  console.log('[WARN] dotenv no cargado, continuando sin .env');
+}
 import "./settings.js";
 import main from '#main';
 import events from '#events';
