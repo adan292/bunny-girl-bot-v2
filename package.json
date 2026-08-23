@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "@vitalets/google-translate-api": "latest",
-    "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
     "axios": "^0.24.0",
     "baileys": "npm:@whiskeysockets/baileys@latest",
     "cfonts": "^3.3.0",
