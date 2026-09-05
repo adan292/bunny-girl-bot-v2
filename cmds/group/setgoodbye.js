@@ -4,7 +4,7 @@ export default {
   category: 'group',
   description: 'Establecer un mensaje de despedida personalizado.',
   isAdmin: true,
-  run: async ({ msg, args, usedPrefix, command }) => {
+  run: async ({ msg, args, usedPrefix }) => {
     const chatId = msg.chat;
     let chat = db.getChat(chatId);
     if (!args.length) {
@@ -26,9 +26,9 @@ export default {
 𖣣ֶㅤ֯⌗ ✤ ⬭ @time    
 > → Fecha y hora
 
-✿ Si ya tienes un mensaje configurado y quieres borrarlo usa: *${usedPrefix + command} clear*`);
+✿ Si ya tienes un mensaje configurado y quieres borrarlo usa: *${usedPrefix}setgoodbye clear*`);
     }
-    if (args[0] === 'clear') {
+    if (args[0] && String(args[0]).toLowerCase() === 'clear') {
       if (!chat.sGoodbye || chat.sGoodbye.trim() === '') {
         return msg.reply('✎ No tienes ningún mensaje de despedida definido.');
       }
