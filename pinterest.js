@@ -1,12 +1,66 @@
 const axios = require('axios');
 const { generateWAMessageFromContent, generateWAMessage, delay } = require('@whiskeysockets/baileys');
 
+const DEFAULT_BASE = process.env.PINTEREST_API_BASE || 'https://api.lempi.lat/tools';
+const API_KEY = process.env.PINTERST_API_KEY || process.env.PINTEREST_API_KEY || process.env.BUNNY_API_KEY || process.env.LEMPI_API_KEY || '';
+
+async function tryFetchFromEndpoints(text) {
+  const base = DEFAULT_BASE.replace(/\/+$/, '');
+  const candidatePaths = [
+    '/pinterest',
+    '/search/pinterest',
+    '/tools/pinterest',
+    '/search',
+    ''
+  ];
+
+  const paramNames = ['query', 'q', 'search', 'term'];
+
+  for (const path of candidatePaths) {
+    const url = `${base}${path}`;
+    for (const pname of paramNames) {
+      try {
+        const params = { [pname]: text };
+        if (API_KEY) params.key = API_KEY;
+        const headers = {};
+        if (API_KEY && API_KEY.length > 20) headers.Authorization = `Bearer ${API_KEY}`;
+
+        const res = await axios.get(url, { params, headers, timeout: 10000 });
+        const parsed = extractArrayFromResponse(res && res.data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        // if response itself is array
+        if (Array.isArray(res.data) && res.data.length > 0) return res.data;
+      } catch (err) {
+        // continue
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractArrayFromResponse(data) {
+  if (!data) return null;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.data)) return data.data;
+  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(data.items)) return data.items;
+  if (data.payload && Array.isArray(data.payload)) return data.payload;
+  return null;
+}
+
+function extractUrlsFromItems(items) {
+  const urls = items
+    .map(img => img && (img.hd || img.url || img.image || img.src || img.thumbnail || (img.images && img.images[0] && img.images[0].url) || (img.media && img.media[0] && img.media[0].url)))
+    .filter(u => typeof u === 'string' && u.startsWith('http'));
+  return Array.from(new Set(urls));
+}
+
 async function sendAlbumMessage(sock, jid, medias, options = {}) {
-  if (!Array.isArray(medias) || medias.length < 2) throw new RangeError("Se necesitan al menos 2 imágenes para un álbum");
-  const caption = options.caption || "";
+  if (!Array.isArray(medias) || medias.length < 2) throw new RangeError('Se necesitan al menos 2 imágenes para un álbum');
+  const caption = options.caption || '';
   const quoted = options.quoted || null;
 
-  // Crea el mensaje raíz del álbum
   const album = generateWAMessageFromContent(
     jid,
     { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
@@ -15,11 +69,10 @@ async function sendAlbumMessage(sock, jid, medias, options = {}) {
 
   await sock.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id });
 
-  // Envía cada imagen (primero descargamos y enviamos buffer para mayor compatibilidad)
   for (let i = 0; i < medias.length; i++) {
     const { url } = medias[i];
     try {
-      const res = await axios.get(url, { responseType: "arraybuffer", timeout: 15000 });
+      const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 });
       const buffer = Buffer.from(res.data);
 
       const img = await generateWAMessage(
@@ -28,7 +81,6 @@ async function sendAlbumMessage(sock, jid, medias, options = {}) {
         { upload: sock.waUploadToServer }
       );
 
-      // Asocia la imagen con el álbum
       img.message.messageContextInfo = {
         messageAssociation: { associationType: 1, parentMessageKey: album.key }
       };
@@ -36,8 +88,7 @@ async function sendAlbumMessage(sock, jid, medias, options = {}) {
       await sock.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id });
       await delay(500);
     } catch (err) {
-      // Si falla una imagen, solo la saltamos (no abortamos todo el álbum)
-      console.warn(`Fallo al procesar imagen ${i} (${url}):`, err.message);
+      console.warn(`Fallo al procesar imagen ${i} (${url}): ${err.message}`);
       await delay(300);
     }
   }
@@ -46,17 +97,17 @@ async function sendAlbumMessage(sock, jid, medias, options = {}) {
 }
 
 module.exports = {
-  name: ["pinterest", "pin"],
-  description: "Busca imágenes en Pinterest",
-  category: "dl",
+  name: ['pinterest', 'pin'],
+  description: 'Busca imágenes en Pinterest usando API configurable (por defecto api.lempi.lat)',
+  category: 'dl',
   ownerOnly: false,
 
   async run({ sock, from, msg, text, usedPrefix, react, reply }) {
     try {
-      if (react) await react("⏳");
+      if (react) await react('⏳');
 
       if (!text || !text.trim()) {
-        if (react) await react("❌");
+        if (react) await react('❌');
         return await reply({
           text:
             `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
@@ -75,15 +126,22 @@ module.exports = {
           `⏳ _Espera un momento..._`
       });
 
-      const res = await axios.get(`https://api.alyacore.xyz/search/pinterest`, {
-        params: { query: text, key: "Duarte-zz12" },
-        timeout: 10000
-      });
+      let items = await tryFetchFromEndpoints(text);
 
-      const data = res.data;
+      if (!items || items.length === 0) {
+        try {
+          const res = await axios.get('https://api.alyacore.xyz/search/pinterest', {
+            params: { query: text, key: 'Duarte-zz12' },
+            timeout: 10000
+          });
+          items = extractArrayFromResponse(res && res.data) || res.data;
+        } catch (err) {
+          // ignore
+        }
+      }
 
-      if (!data || !data.status || !Array.isArray(data.data) || data.data.length === 0) {
-        if (react) await react("❌");
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        if (react) await react('❌');
         return await reply({
           text:
             `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
@@ -92,17 +150,10 @@ module.exports = {
         });
       }
 
-      // Limitar a 10 resultados y preparar lista de URLs (con fallbacks)
-      const candidates = data.data.slice(0, 20);
-      const urls = candidates
-        .map(img => img.hd || img.url || img.thumbnail || (img.images && img.images[0] && img.images[0].url))
-        .filter(u => typeof u === "string" && u.startsWith("http"));
+      const urls = extractUrlsFromItems(items).slice(0, 10);
 
-      // Intentamos usar hasta 10 pero necesitamos al menos 2 válidas
-      const uniqueUrls = Array.from(new Set(urls)).slice(0, 10);
-
-      if (uniqueUrls.length < 2) {
-        if (react) await react("❌");
+      if (urls.length < 2) {
+        if (react) await react('❌');
         return await reply({
           text:
             `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
@@ -111,7 +162,7 @@ module.exports = {
         });
       }
 
-      const medias = uniqueUrls.map(u => ({ url: u }));
+      const medias = urls.map(u => ({ url: u }));
 
       const caption =
         `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
@@ -119,19 +170,18 @@ module.exports = {
         `🖼️ *Imágenes:* ${medias.length}\n\n` +
         `⚔️ _Yuta Okotsu MD | DuarteXV_`;
 
-      // Enviar álbum (la función descarga los buffers internamente)
       await sendAlbumMessage(sock, from, medias, { caption, quoted: msg });
 
-      if (react) await react("✅");
+      if (react) await react('✅');
     } catch (error) {
-      if (react) await react("❌");
+      if (react) await react('❌');
       await reply({
         text:
           `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
           `❌ *Error:* ${error.message}\n\n` +
           `⚔️ _Yuta Okotsu MD | DuarteXV_`
       });
-      console.error("Error en pinterest:", error);
+      console.error('Error en pinterest:', error);
     }
   }
 };
