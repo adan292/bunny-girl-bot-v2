@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { generateWAMessageFromContent, generateWAMessage, delay } = require('@whiskeysockets/baileys');
 
-const DEFAULT_BASE = process.env.PINTEREST_API_BASE || 'https://api.lempi.lat/tools';
+const DEFAULT_BASE = process.env.PINTEREST_API_BASE || process.env.PINTEREST_API_URL || 'https://api.lempi.lat/tools';
 const API_KEY = process.env.PINTEREST_API_KEY || process.env.BUNNY_API_KEY || process.env.LEMPI_API_KEY || '';
 
 async function tryFetchFromEndpoints(text) {
@@ -16,24 +16,72 @@ async function tryFetchFromEndpoints(text) {
 
   const paramNames = ['query', 'q', 'search', 'term'];
 
+  const authVariants = [
+    { type: 'none' },
+    { type: 'query', name: 'key' },
+    { type: 'query', name: 'token' },
+    { type: 'query', name: 'api_key' },
+    { type: 'query', name: 'apikey' },
+    { type: 'header', header: 'Authorization', value: (k) => `Bearer ${k}` },
+    { type: 'header', header: 'x-api-key', value: (k) => k },
+    { type: 'header', header: 'apikey', value: (k) => k }
+  ];
+
+  // Track if we saw any 403 responses (to provide better diagnostics / early fallback)
+  let saw403 = false;
+
   for (const path of candidatePaths) {
     const url = `${base}${path}`;
     for (const pname of paramNames) {
-      try {
-        const params = { [pname]: text };
-        if (API_KEY) params.key = API_KEY;
-        const headers = {};
-        if (API_KEY && API_KEY.length > 20) headers.Authorization = `Bearer ${API_KEY}`;
+      // Try variants: prefer no-auth first, then the variants
+      const variantsToTry = authVariants;
+      for (const variant of variantsToTry) {
+        try {
+          const params = { [pname]: text };
+          const headers = {};
 
-        const res = await axios.get(url, { params, headers, timeout: 10000 });
-        const parsed = extractArrayFromResponse(res && res.data);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        // if response itself is array
-        if (Array.isArray(res.data) && res.data.length > 0) return res.data;
-      } catch (err) {
-        // continue
+          if (variant.type === 'query' && API_KEY) {
+            params[variant.name] = API_KEY;
+          }
+
+          if (variant.type === 'header' && API_KEY) {
+            headers[variant.header] = typeof variant.value === 'function' ? variant.value(API_KEY) : variant.value;
+          }
+
+          // Also include a short User-Agent to avoid some basic blocks
+          headers['User-Agent'] = headers['User-Agent'] || 'Mozilla/5.0 (compatible; Bot/1.0)';
+
+          const res = await axios.get(url, { params, headers, timeout: 10000 });
+
+          const parsed = extractArrayFromResponse(res && res.data);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(res.data) && res.data.length > 0) return res.data;
+
+          // If response is an object that contains images, still return it (caller will try to extract URLs)
+          if (res && res.data && typeof res.data === 'object') return [res.data];
+        } catch (err) {
+          const resp = err && err.response;
+          if (resp) {
+            // Log details for debugging
+            console.warn(`Request to ${url} with param ${pname} and variant ${JSON.stringify(variant)} failed:`, resp.status, resp.data && (typeof resp.data === 'string' ? resp.data.slice(0, 200) : resp.data));
+            if (resp.status === 403) saw403 = true;
+            // If we got 401/403 and there is no API_KEY, it's probably auth required; keep trying other variants
+            // If many 403s and we have an API_KEY, continue trying other variants; if all variants fail we will fallback.
+          } else {
+            // Network / timeout / other
+            // console.warn(`Request error to ${url}:`, err.message)
+          }
+          // continue trying other variants
+        }
       }
+      // if we observed 403 for this path/pname and we don't have an API_KEY, no point trying other param names for this path
+      // (we'll proceed to other paths anyway)
     }
+  }
+
+  if (saw403) {
+    // If we saw 403s, return a special marker so caller can provide a helpful message and/or fallback
+    return { __403: true };
   }
 
   return null;
@@ -128,6 +176,12 @@ module.exports = {
 
       let items = await tryFetchFromEndpoints(text);
 
+      // If tryFetchFromEndpoints returned the special 403 marker, inform user and fallback to alyacore
+      if (items && items.__403) {
+        console.warn('Received 403(s) from configurable API endpoints. Falling back to alyacore.');
+        items = null;
+      }
+
       if (!items || items.length === 0) {
         try {
           const res = await axios.get('https://api.alyacore.xyz/search/pinterest', {
@@ -136,7 +190,10 @@ module.exports = {
           });
           items = extractArrayFromResponse(res && res.data) || res.data;
         } catch (err) {
-          // ignore
+          // If alyacore also fails, capture details
+          if (err && err.response) {
+            console.warn('Fallback alyacore failed:', err.response.status, err.response.data && (typeof err.response.data === 'string' ? err.response.data.slice(0, 200) : err.response.data));
+          }
         }
       }
 
