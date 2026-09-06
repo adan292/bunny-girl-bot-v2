@@ -88,7 +88,7 @@ async function convertirMp3AOpusBuffer(mp3Buffer) {
 }
 
 const isYTUrl = (url = '') =>
-  /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i.test(url)
+  /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(url)
 
 const getVideoId = (text = '') => {
   const raw = String(text || '').trim()
@@ -420,8 +420,6 @@ const cmd = {
 
       registrarListener(sock)
 
-      const usarBotones = !esIphone(msg)
-
       const infoTxt =
         `🎬 *RESULTADO ENCONTRADO*\n\n` +
         `> ❖ Título  › *${title}*\n` +
@@ -431,65 +429,26 @@ const cmd = {
         `> ✩ Publicado › *${ago}*\n` +
         `> ❒ Enlace › ${url}\n\n`
 
-      const caption = usarBotones
-        ? infoTxt +
-          `🟢 *Toca el botón* de abajo para elegir formato:\n\n` +
-          `🔵 Si el menú no se abre, *cita este mensaje* y escribe:\n` +
-          `   *1* o *audio*   → Audio MP3 🎵\n` +
-          `   *2* o *video*   → Video MP4 🎬\n` +
-          `   *3* o *videodoc* → Video como documento 📁\n` +
-          `   *4* o *audiodoc* → Audio como documento 📄\n` +
-          `   *5* o *voice* → Nota de voz (PTT) 🔊`
-        : infoTxt +
-          `🟡 *Reacciona a este mensaje* con un emoji:\n` +
-          `   👍  → Audio MP3 🎵\n` +
-          `   ❤️  → Video MP4 🎬\n` +
-          `   📄  → Audio como documento\n` +
-          `   📁  → Video como documento\n` +
-          `   🔊  → Nota de voz (PTT)\n\n` +
-          `🔵 O bien *cita este mensaje* y escribe:\n` +
-          `   *1* o *audio* / *2* o *video* / *3* o *videodoc* / *4* o *audiodoc* / *5* o *voice*`
+      // Siempre enviar sin botones: instrucciones por reacciones/cita
+      const caption = infoTxt +
+        `🟡 Reacciona a este mensaje con un emoji:\n` +
+        `   👍  → Audio MP3 🎵\n` +
+        `   ❤️  → Video MP4 🎬\n` +
+        `   📄  → Audio como documento\n` +
+        `   📁  → Video como documento\n` +
+        `   🔊  → Nota de voz (PTT)\n\n` +
+        `🔵 O bien cita este mensaje y escribe:\n` +
+        `   *1* o *audio* / *2* o *video* / *3* o *videodoc* / *4* o *audiodoc* / *5* o *voice`
 
-      // Botones rápidos directos (formato buttonsMessage con type:1 = quick_reply).
-      // Dos botones visibles directamente debajo de la imagen: Audio MP3 y Video MP4.
-      // Las opciones de documento y ayuda extra siguen disponibles citando el
-      // mensaje o por reacciones. Usamos 2 botones para máxima compatibilidad.
-      const botonesRespuesta = usarBotones ? [
-        {
-          buttonId: '__ginko_pa',
-          buttonText: { displayText: '🎵 Audio MP3' },
-          type: 1
-        },
-        {
-          buttonId: '__ginko_pv',
-          buttonText: { displayText: '🎬 Video MP4' },
-          type: 1
-        }
-      ] : []
-
-      // Payload: imagen + caption + botones rápidos. headerType=4 = imagen.
-      // footerText se usa en el formato buttonsMessage (no "footer").
-      const payload = usarBotones && thumbnail
-        ? {
-            image: { url: thumbnail },
-            caption,
-            footerText: '❦ Bunny Girl · toca un botón',
-            buttons: botonesRespuesta,
-            headerType: 4
-          }
-        : thumbnail
-          ? { image: { url: thumbnail }, caption }
-          : { text: caption }
+      const payload = thumbnail ? { image: { url: thumbnail }, caption } : { text: caption }
 
       let card
       const opts = { quoted: msg }
       try {
         card = await sock.sendMessage(msg.chat, payload, opts)
       } catch (e) {
-        // Si los botones fallan, mandar solo la imagen sin botones (funciona por reacciones/citas)
-        card = await sock.sendMessage(msg.chat, thumbnail ? { image: { url: thumbnail }, caption } : { text: caption }, opts).catch(async () =>
-          await sock.sendMessage(msg.chat, { text: caption }, opts)
-        )
+        // Si falla el envío con imagen, enviar texto simple
+        card = await sock.sendMessage(msg.chat, { text: caption }, opts).catch(() => null)
       }
 
       if (!card?.key?.id) return msg.reply('❌ No se pudo enviar la tarjeta de opciones.')
