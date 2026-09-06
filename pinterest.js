@@ -2,7 +2,7 @@ const axios = require('axios');
 const { generateWAMessageFromContent, generateWAMessage, delay } = require('@whiskeysockets/baileys');
 
 const DEFAULT_BASE = process.env.PINTEREST_API_BASE || 'https://api.lempi.lat/tools';
-const API_KEY = process.env.PINTERST_API_KEY || process.env.PINTEREST_API_KEY || process.env.BUNNY_API_KEY || process.env.LEMPI_API_KEY || '';
+const API_KEY = process.env.PINTEREST_API_KEY || process.env.BUNNY_API_KEY || process.env.LEMPI_API_KEY || '';
 
 async function tryFetchFromEndpoints(text) {
   const base = DEFAULT_BASE.replace(/\/+$/, '');
