@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import moment from 'moment-timezone';
 import db from '#db';
 import defaultAvatar from '../lib/default-avatar.js';
+import fetch from 'node-fetch';
 
 function getGroupAdmins(participants) {
   return (participants ?? []).filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id).filter(Boolean);
@@ -50,9 +51,9 @@ export default async (sock, msg) => {
           if (!metadata) continue;
           let caption;
           if (chat.sWelcome && chat.sWelcome.trim() !== '') {
-            caption = chat.sWelcome.replace(/@user/g, `@${phone}`).replace(/@group/g, metadata.subject).replace(/@desc/g, metadata.desc || 'Sin descripción').replace(/@members/g, memberCount).replace(/@time/g, `${tiempo} ${tiempo2}`);
+            caption = chat.sWelcome.replace(/@user/g, `@${phone}`).replace(/@group/g, metadata.subject).replace(/@desc/g, metadata.desc || 'Sin descripción').replace(/@members/g, memberCount).replace(/@time/g, tiempo).replace(/@hora/g, tiempo2);
           } else {
-            caption = `╭┈──̇─̇─̇────̇─̇─̇──◯◝\n┊「 *Bienvenido (⁠ ⁠ꈍ⁠ᴗ⁠ꈍ⁠)* 」\n┊︶︶︶︶︶︶︶︶︶︶︶\n┊  *Nombre ›* @${phone}\n┊  *Grupo ›* ${metadata.subject}\n┊┈─────̇─̇─̇─────◯◝\n┊➤ *Usa /menu para ver los comandos.*\n┊➤ *Ahora somos ${memberCount} miembros.*\n┊ ︿︿︿︿︿︿︿︿︿︿︿\n╰─────────────────╯`;
+            caption = `╭┈──̇─̇─̇────̇─̇─̇──◯◝\n┊「 *Bienvenido (⁠ ⁠ꈍ⁠ᴗ⁠ꈍ⁠)* 」\n┊︶︶︶︶︶︶︶︶︶︶︶\n┊  *Nombre ›* @${phone}\n┊  *Grupo  ›* ${metadata.subject}\n┊  *Integrantes ›* ${memberCount}\n┊  *Fecha ›* ${tiempo} · ${tiempo2}\n╰┈──̇─̇─̇────̇─̇─̇──◯◝`;
           }
           await sock.sendMessage(anu.id, { image: { url: pp }, caption, mentions: [jid] });
         }
@@ -60,11 +61,53 @@ export default async (sock, msg) => {
           if (!metadata) continue;
           let caption;
           if (chat.sGoodbye && chat.sGoodbye.trim() !== '') {
-            caption = chat.sGoodbye.replace(/@user/g, `@${phone}`).replace(/@group/g, metadata.subject).replace(/@desc/g, metadata.desc || 'Sin descripción').replace(/@members/g, memberCount).replace(/@time/g, `${tiempo} ${tiempo2}`);
+            caption = chat.sGoodbye.replace(/@user/g, `@${phone}`).replace(/@group/g, metadata.subject).replace(/@desc/g, metadata.desc || 'Sin descripción').replace(/@members/g, memberCount).replace(/@time/g, tiempo).replace(/@hora/g, tiempo2);
           } else {
-            caption = `╭┈──̇─̇─̇────̇─̇─̇──◯◝\n┊「 *Hasta pronto (⁠╥⁠﹏⁠╥⁠)* 」\n┊︶︶︶︶︶︶︶︶︶︶︶\n┊  *Nombre ›* @${phone}\n┊  *Grupo ›* ${metadata.subject}\n┊┈─────̇─̇─̇─────◯◝\n┊➤ *Ojalá que vuelva pronto.*\n┊➤ *Ahora somos ${memberCount} miembros.*\n┊ ︿︿︿︿︿︿︿︿︿︿︿\n╰─────────────────╯`;
+            caption = `╭┈──̇─̇─̇────̇─̇─̇──◯◝\n┊「 *Hasta pronto (⁠╥⁠﹏⁠╥⁠)* 」\n┊︶︶︶︶︶︶︶︶︶︶︶\n┊  *Nombre ›* @${phone}\n┊  *Grupo  ›* ${metadata.subject}\n┊  *Integrantes ›* ${memberCount}\n┊  *Fecha ›* ${tiempo} · ${tiempo2}\n╰┈──̇─̇─̇────̇─̇─̇──◯◝`;
           }
-          await sock.sendMessage(anu.id, { image: { url: pp }, caption, mentions: [jid] });
+
+          // Intentar generar imagen de goodbye usando la API de lempi.lat. Si falla, hacer fallback a la foto de perfil.
+          try {
+            const usernameParam = encodeURIComponent(phone);
+            const guildNameParam = encodeURIComponent(metadata?.subject || '');
+            const guildIconParam = metadata?.icon || '';
+            const memberCountParam = encodeURIComponent(String(memberCount || 0));
+            const avatarParam = encodeURIComponent(pp || '');
+            const backgroundParam = encodeURIComponent(chat.goodbyeBackground || '');
+            const apikey = encodeURIComponent(settings.apiKeyForLempi || 'Bunny-girl-bot');
+
+            const apiUrl = `https://api.lempi.lat/api/canvas/goodbyev1?username=${usernameParam}&guildName=${guildNameParam}&guildIcon=${encodeURIComponent(guildIconParam)}&memberCount=${memberCountParam}&avatar=${avatarParam}&background=${backgroundParam}&quality=80&apikey=${apikey}`;
+
+            const res = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json().catch(() => null);
+
+            if (data) {
+              // Si la API devuelve un campo con base64 tipo 'data:image/png;base64,...'
+              if (typeof data.image === 'string' && data.image.startsWith('data:image')) {
+                const base64 = data.image.split(',')[1];
+                const buffer = Buffer.from(base64, 'base64');
+                await sock.sendMessage(anu.id, { image: buffer, caption, mentions: [jid] });
+              // Si la API devuelve una URL directa a la imagen
+              } else if (data.url || data.imageURL || data.image_link) {
+                const imageUrl = data.url || data.imageURL || data.image_link;
+                await sock.sendMessage(anu.id, { image: { url: imageUrl }, caption, mentions: [jid] });
+              // Otra posible clave
+              } else if (typeof data.result === 'string' && data.result.startsWith('data:image')) {
+                const base64 = data.result.split(',')[1];
+                const buffer = Buffer.from(base64, 'base64');
+                await sock.sendMessage(anu.id, { image: buffer, caption, mentions: [jid] });
+              } else {
+                // Respuesta no esperada: fallback
+                await sock.sendMessage(anu.id, { image: { url: pp }, caption, mentions: [jid] });
+              }
+            } else {
+              // No vino JSON: fallback
+              await sock.sendMessage(anu.id, { image: { url: pp }, caption, mentions: [jid] });
+            }
+          } catch (err) {
+            console.log('Error llamando a lempi API para goodbye:', err);
+            await sock.sendMessage(anu.id, { image: { url: pp }, caption, mentions: [jid] });
+          }
         }
         if (anu.action === 'remove' || anu.action === 'leave') {
           const user = db.getChatUser(anu.id, jid);
