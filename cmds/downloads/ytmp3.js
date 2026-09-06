@@ -132,7 +132,7 @@ async function getVideoInfo(input, video_id) {
 }
 
 async function getAudioFromApi(url) {
-  const apiUrl = `https://api.lempi.lat/dl/yta?url=${encodeURIComponent(url)}&apikey=montekey28`
+  const apiUrl = `https://api.lempi.lat/dl/yta?url=${encodeURIComponent(url)}&apikey=Bunny-girl-bot`
   const ctrlMeta = new AbortController()
   const toMeta = setTimeout(() => ctrlMeta.abort(), 25000)
   let res
@@ -156,7 +156,7 @@ async function getAudioFromApi(url) {
 }
 
 async function getVideoFromApi(url) {
-  const apiUrl = `https://api.lempi.lat/dl/ytv?url=${encodeURIComponent(url)}&apikey=montekey28`
+  const apiUrl = `https://api.lempi.lat/dl/ytv?url=${encodeURIComponent(url)}&apikey=Bunny-girl-bot`
   const ctrlMeta = new AbortController()
   const toMeta = setTimeout(() => ctrlMeta.abort(), 30000)
   let res
