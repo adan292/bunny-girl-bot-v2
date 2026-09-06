@@ -41,12 +41,12 @@ const cmd = {
 
       const info_message = `➩ Descargando › *${title}*
 
-> ❖ Canal › *${channel}*
-> ⴵ Duración › *${duration}*
-> ❀ Vistas › *${views}*
-> ❒ Calidad › *${quality}*
-> ❒ Tamaño › *${size_text}*
-> ❒ Enlace › *${url}*`
+ > ❖ Canal › *${channel}*
+ > ⴵ Duración › *${duration}*
+ > ❀ Vistas › *${views}*
+ > ❒ Calidad › *${quality}*
+ > ❒ Tamaño › *${size_text}*
+ > ❒ Enlace › *${url}*`
 
       if (thumbnail) {
         await sock.sendMessage(msg.chat, {
@@ -59,8 +59,8 @@ const cmd = {
 
       const caption = `乂 *Video descargado*
 
-> ❒ Calidad › *${quality}*
-> ❒ Tamaño › *${size_text}*`
+ > ❒ Calidad › *${quality}*
+ > ❒ Tamaño › *${size_text}*`
 
       if (send_as_document) {
         await sock.sendMessage(msg.chat, {
@@ -90,7 +90,8 @@ const cmd = {
       }
     } catch (e) {
       await msg.reply(
-        `> An unexpected error occurred while executing command *${usedPrefix + command}*.\n> [Error: *${e.message}*]`
+        `> An unexpected error occurred while executing command *${usedPrefix + command}*.` +
+        `\n> [Error: *${e.message}*]`
       )
     }
   }
@@ -98,8 +99,10 @@ const cmd = {
 
 export default cmd
 
+// Lempi API base URL. Keep url= param and append apikey.
 const api_url = 'https://api.lempi.lat/dl/ytv?url='
-const api_key = 'montekey28'
+// Prefer environment variable to avoid hardcoding API keys
+const api_key = process.env.LEMPI_API_KEY || 'montekey28'
 const max_video_size = 50 * 1024 * 1024
 
 async function getYoutubeUrl(input) {
@@ -119,15 +122,20 @@ async function getYoutubeUrl(input) {
 }
 
 async function getFareVideo(url) {
-  const res = await fetch(
-    `${api_url}${encodeURIComponent(url)}&apikey=${api_key}`,
-    {
-      headers: {
-        accept: 'application/json',
-        'user-agent': 'Mozilla/5.0'
-      }
+  // Integrate Lempi fetch using the API key from env (safer)
+  const key = api_key
+  if (!key) throw new Error('Missing LEMPI_API_KEY environment variable')
+
+  const endpoint = `${api_url}${encodeURIComponent(url)}&apikey=${encodeURIComponent(key)}`
+
+  // Use a GET request and accept JSON; do not send Content-Type for GET
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'user-agent': 'Mozilla/5.0'
     }
-  )
+  })
 
   const text = await res.text()
 
@@ -153,6 +161,7 @@ async function getFareVideo(url) {
 
   return data
 }
+
 async function getRemoteFileSize(url) {
   const head = await fetch(url, {
     method: 'HEAD',
