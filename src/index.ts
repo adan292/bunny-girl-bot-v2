@@ -6,6 +6,7 @@ import { WhatsBot } from './core/WhatsBot';
 import { subbotManager } from './core/SubbotManager';
 import { getMainBot } from './db/botsRepo';
 import { logStatus, logBanner, color } from './utils/logger';
+import { checkNetwork } from './utils/netcheck';
 
 async function askMainNumber(): Promise<string> {
   const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -30,6 +31,7 @@ async function askMainNumber(): Promise<string> {
 async function main(): Promise<void> {
   logBanner();
   await initDb();
+  await checkNetwork();
 
   // El número del bot principal NO vive en el .env: la primera vez se
   // pregunta por consola y queda guardado en la base de datos. En los

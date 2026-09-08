@@ -10,15 +10,6 @@ export interface CommandContext {
   senderJid: string;
   args: string[];
   isOwner: boolean;
-  commands: Map<string, CommandDefinition>;
 }
 
 export type CommandHandler = (ctx: CommandContext) => Promise<void>;
-
-export interface CommandDefinition {
-  name: string;
-  aliases?: string[];
-  description: string;
-  ownerOnly?: boolean;
-  handler: CommandHandler;
-}

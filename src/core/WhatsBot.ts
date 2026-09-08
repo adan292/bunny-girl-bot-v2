@@ -8,7 +8,7 @@ import pino from 'pino';
 import qrcodeTerminal from 'qrcode-terminal';
 
 import { config } from '../config';
-import { useSQLiteAuthState, resetAuth } from '../auth/authState';
+import { useSQLiteAuthState, resetAuth } from '../db/authState';
 import { ensureBot, getBot, setBotStatus, type BotType } from '../db/botsRepo';
 import { logStatus, logError, logPairingCode } from '../utils/logger';
 import { handleMessage } from '../handlers/messageHandler';
@@ -65,8 +65,9 @@ export class WhatsBot {
     try {
       const fetched = await fetchLatestBaileysVersion();
       version = fetched.version;
+      logStatus(this.label, this.name, `Versión de WhatsApp Web: ${version.join('.')}`, 'info');
     } catch {
-      // Si falla, se usa la versión que trae el paquete de fábrica.
+      logStatus(this.label, this.name, 'No se pudo obtener la última versión de WA Web, usando la del paquete', 'warn');
     }
 
     const sock = makeWASocket({
@@ -161,25 +162,6 @@ export class WhatsBot {
           resetAuth(this.id);
         } else if (loggedOut && this.everConnected) {
           logStatus(this.label, this.name, 'Sesión cerrada, requiere nuevo emparejamiento', 'error');
-          return;
-        }
-
-        // El código de vinculación queda atado a ESTA conexión: si
-        // reconectamos automáticamente mientras el usuario todavía no lo ha
-        // ingresado, WhatsApp lo invalida por detrás sin avisar — y el
-        // usuario ve "código vencido" segundos después de haberlo tirado.
-        // En vez de reconectar solo en este punto, cortamos y avisamos: que
-        // reinicie para pedir uno nuevo, ya con la conexión estable.
-        const waitingOnPairingCode =
-          this.pairingRequested && !state.creds.registered && !this.everConnected;
-
-        if (waitingOnPairingCode) {
-          logStatus(
-            this.label,
-            this.name,
-            'La conexión se cayó mientras esperaba que ingresaras el código — eso lo invalida. Corre "rm -rf data" y reinicia para pedir uno nuevo, e ingrésalo apenas aparezca.',
-            'error',
-          );
           return;
         }
 

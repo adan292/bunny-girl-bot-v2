@@ -1,5 +1,5 @@
 import { proto, BufferJSON, initAuthCreds } from '@whiskeysockets/baileys';
-import { get, run, runRaw, transaction } from '../db/database';
+import { get, run, runRaw, transaction } from './database';
 
 /**
  * Distintos forks/versiones de Baileys no siempre exportan los mismos

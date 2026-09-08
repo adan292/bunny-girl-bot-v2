@@ -11,7 +11,7 @@ import { register } from 'tsx/esm/api';
 register();
 
 try {
-  await import('./app.ts');
+  await import('./src/index.ts');
 } catch (err) {
   console.error('Error fatal al iniciar:', err);
   process.exit(1);
