@@ -1,5 +1,3 @@
 node_modules/
-auth/
-data/*.json
-.env
-*.log
+Sessions/
+tmp/
