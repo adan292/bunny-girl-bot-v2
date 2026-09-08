@@ -1,11 +1,5 @@
 node_modules/
-.env
-session/
-Sessions/
-tmp/
-audit/api-results.json
-config.private.js
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
+dist/
+*.log
+bot.db
+bot.db-*
