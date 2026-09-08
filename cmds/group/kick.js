@@ -7,6 +7,7 @@ export default {
   isAdmin: true,
   botAdmin: true,
   run: async ({ msg, sock, args, usedPrefix, command, groupMetadata, participants }) => {
+    // Asegurar obtención del JID del bot decodificado
     const botId = sock.decodeJid(sock.user.id);
     const ownerBot = (global.owner ? global.owner.split('@')[0] : '') + '@s.whatsapp.net';
 
@@ -51,7 +52,7 @@ export default {
         try { 
           await sock.groupParticipantsUpdate(msg.chat, [jid], 'remove'); 
           eliminados++; 
-          await new Promise(r => setTimeout(r, 2500)); 
+          await new Promise(r => setTimeout(r, 2000)); 
         } catch (e) { 
           errores.push(`@${jid.split('@')[0]}: ${e.message}`); 
         }
@@ -75,13 +76,13 @@ export default {
         try { 
           await sock.groupParticipantsUpdate(msg.chat, [jid], 'remove'); 
           eliminados++; 
-          await new Promise(r => setTimeout(r, 2500)); 
+          await new Promise(r => setTimeout(r, 2000)); 
         } catch (e) { 
           errores.push(`@${jid.split('@')[0]}: ${e.message}`); 
         }
       }
       
-      let res = `《✧| Proceso completado.\n> Usuarios eliminados: *${eliminados}*`;
+      let res = `《✧》 Proceso completado.\n> Usuarios eliminados: *${eliminados}*`;
       if (noEliminados > 0) res += `\n> Usuarios omitidos (admins/owners): *${noEliminados}*`;
       if (errores.length > 0) res += `\n> Errores: *${errores.length}*\n${errores.join('\n')}`;
       return msg.reply(res);
@@ -89,7 +90,7 @@ export default {
 
     // OPCIÓN: inactive / listinactive
     if (args[0] === 'inactive' || args[0] === 'listinactive') {
-      const allChatUsers = db.getChatUser(msg.chat);
+      const allChatUsers = db.getChatUser(msg.chat) || [];
       const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       let sider = [];
       
@@ -120,7 +121,7 @@ export default {
         try { 
           await sock.groupParticipantsUpdate(msg.chat, [jid], 'remove'); 
           eliminados++; 
-          await new Promise(r => setTimeout(r, 2500)); 
+          await new Promise(r => setTimeout(r, 2000)); 
         } catch (e) { 
           errores.push(`@${jid.split('@')[0]}: ${e.message}`); 
         }
@@ -135,13 +136,13 @@ export default {
     const targetRaw = msg.mentionedJid && msg.mentionedJid[0] ? msg.mentionedJid[0] : (msg.quoted?.sender ? msg.quoted.sender : null);
 
     if (!targetRaw) {
-      return msg.reply(`《✧》 Por favor, etiqueta o responde al *mensaje* de la *persona* que quieres eliminar.\n\n✎ *Opciones especiales:*\n> *${usedPrefix + command} num +57* - Eliminar por prefijo\n> *${usedPrefix + command} all* - Eliminar a todos\n> *${usedPrefix + command} inactive* - Eliminar inactivos`);
+      return msg.reply(`《✧》 Por favor, etiqueta o responde al *mensaje* de la *persona* que quieres eliminar.\n\n✎ *Opciones especiales:*\n> *${usedPrefix + command} num +57* - Eliminar por prefijo\n> *${usedPrefix + command} listnum +57* - Mostrar usuarios por prefijo\n> *${usedPrefix + command} inactive* - Eliminar inactivos (30 días)\n> *${usedPrefix + command} listinactive* - Mostrar inactivos\n> *${usedPrefix + command} all* - Eliminar todos los usuarios no admin`);
     }
 
     const userBase = targetRaw.split('@')[0];
     const participant = participants.find(p => p.id?.split('@')[0] === userBase || p.lid?.split('@')[0] === userBase);
     
-    if (!participant) return sock.reply(msg.chat, `《✧》 *@${userBase}* ya no está en el grupo.`, msg, { mentions: [targetRaw] });
+    if (!participant) return sock.reply(msg.chat, `《✧》 *@${userBase}* ya no está en el grupo o el JID es inválido.`, msg, { mentions: [targetRaw] });
     
     const realJid = participant.id || targetRaw;
 
@@ -157,8 +158,7 @@ export default {
       await sock.groupParticipantsUpdate(msg.chat, [realJid], 'remove');
       return sock.reply(msg.chat, `✎ @${userBase} *eliminado* correctamente`, msg, { mentions: [realJid] });
     } catch (e) {
-      return msg.reply(`> Ocurrió un error inesperado al intentar eliminar a este usuario.\n> [Error: *${e.message}*]`);
+      return msg.reply(`> Ocurrió un error al intentar eliminar a @${userBase}.\n> [Error: *${e.message}*]`);
     }
   },
 };
-      
