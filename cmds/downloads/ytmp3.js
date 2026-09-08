@@ -448,45 +448,51 @@ const cmd = {
           `   📁  → Video como documento\n` +
           `   🔊  → Nota de voz (PTT)\n\n` +
           `🔵 O bien *cita este mensaje* y escribe:\n` +
-          `   *1* o *audio* / *2* o *video* / *3* o *videodoc* / *4* o *audiodoc* / *5* o *voice*`
+          `   *1* o *audio* / *2* o *video* / *3* o *videodoc* / *4* o *audiodoc* / *5* o *voice`
 
-      // Botones rápidos directos (formato buttonsMessage con type:1 = quick_reply).
-      // Dos botones visibles directamente debajo de la imagen: Audio MP3 y Video MP4.
-      // Las opciones de documento y ayuda extra siguen disponibles citando el
-      // mensaje o por reacciones. Usamos 2 botones para máxima compatibilidad.
-      const botonesRespuesta = usarBotones ? [
-        {
-          buttonId: '__ginko_pa',
-          buttonText: { displayText: '🎵 Audio MP3' },
-          type: 1
-        },
-        {
-          buttonId: '__ginko_pv',
-          buttonText: { displayText: '🎬 Video MP4' },
-          type: 1
-        }
-      ] : []
-
-      // Payload: imagen + caption + botones rápidos. headerType=4 = imagen.
-      // footerText se usa en el formato buttonsMessage (no "footer").
-      const payload = usarBotones && thumbnail
-        ? {
-            image: { url: thumbnail },
-            caption,
-            footerText: '❦ Bunny Girl · toca un botón',
-            buttons: botonesRespuesta,
-            headerType: 4
-          }
-        : thumbnail
-          ? { image: { url: thumbnail }, caption }
-          : { text: caption }
-
-      let card
+      // En lugar de usar sólo dos botones rápidos, enviamos un List Message
+      // con todas las opciones para que el usuario elija: MP3/MP4/videodoc/audiodoc/voice.
+      // Esto aprovecha el soporte de listResponseMessage en procesarRespuesta.
       const opts = { quoted: msg }
+      let card
+
       try {
-        card = await sock.sendMessage(msg.chat, payload, opts)
+        if (usarBotones) {
+          const rows = [
+            { title: '🎵 Audio MP3', rowId: '__ginko_pa', description: 'Descargar audio en MP3' },
+            { title: '🎬 Video MP4', rowId: '__ginko_pv', description: 'Descargar video en MP4' },
+            { title: '📁 Video como documento', rowId: '__ginko_pvd', description: 'Enviar el video como documento' },
+            { title: '📄 Audio como documento', rowId: '__ginko_pad', description: 'Enviar el audio como documento' },
+            { title: '🔊 Nota de voz (PTT)', rowId: 'voice', description: 'Enviar nota de voz (OGG/Opus)' }
+          ]
+
+          const listMessage = {
+            title: 'Selecciona un formato',
+            description: infoTxt.trim(),
+            buttonText: 'Seleccionar formato',
+            footerText: '❦ Bunny Girl · toca una opción',
+            listType: 1,
+            sections: [ { title: 'Formatos', rows } ]
+          }
+
+          // En algunos clientes la imagen/thumbnail no se muestra en listMessage, 
+          // así que enviamos primero la imagen+caption como respaldo si hay thumbnail.
+          if (thumbnail) {
+            try {
+              // enviar la imagen con caption y luego el list
+              await sock.sendMessage(msg.chat, { image: { url: thumbnail }, caption }, opts)
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          card = await sock.sendMessage(msg.chat, listMessage, opts)
+        } else {
+          // Fallback para iPhone u otros: enviar texto con instrucciones (ya en caption)
+          card = await sock.sendMessage(msg.chat, thumbnail ? { image: { url: thumbnail }, caption } : { text: caption }, opts)
+        }
       } catch (e) {
-        // Si los botones fallan, mandar solo la imagen sin botones (funciona por reacciones/citas)
+        // Si el envío de listMessage falla, mandar solo la imagen sin listas (funciona por reacciones/citas)
         card = await sock.sendMessage(msg.chat, thumbnail ? { image: { url: thumbnail }, caption } : { text: caption }, opts).catch(async () =>
           await sock.sendMessage(msg.chat, { text: caption }, opts)
         )
