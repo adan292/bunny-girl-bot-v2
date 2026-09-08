@@ -90,7 +90,8 @@ const cmd = {
       }
     } catch (e) {
       await msg.reply(
-        `> An unexpected error occurred while executing command *${usedPrefix + command}*.\n> [Error: *${e.message}*]`
+        `> An unexpected error occurred while executing command *${usedPrefix + command}*.
+> [Error: *${e.message}*]`
       )
     }
   }
@@ -106,7 +107,7 @@ const max_video_size = 50 * 1024 * 1024
 async function getYoutubeUrl(input) {
   const id = getVideoId(input)
 
-  if (id) return `https://youtu.be{id}`
+  if (id) return `https://youtu.be/${id}`
   if (isYTUrl(input)) return input
 
   const search = await yts(input)
@@ -122,7 +123,7 @@ async function getYoutubeUrl(input) {
 async function getFareVideo(url) {
   // Petición HTTP usando la nueva estructura y headers solicitados
   const res = await fetch(
-    `${api_url}${encodeURIComponent(url)}&apikey=${api_key}`,
+    `${api_url}?url=${encodeURIComponent(url)}&apikey=${api_key}`,
     {
       method: "GET",
       headers: {
