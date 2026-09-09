@@ -1,17 +1,16 @@
 # 🐰 Mai Sakurajima Bot — WhatsApp Multi-Device
 
 <p align="center">
-  <img src="https://tenor.com" alt="Mai Sakurajima" width="350"/>
+  <img src="https://tenor.com" width="75%" alt="Mai Sakurajima Bot">
 </p>
 
-<p align="center">
-  <strong>Un bot de WhatsApp multifuncional e interactivo basado en el personaje Mai Sakurajima de *Seishun Buta Yarou*.</strong>
-</p>
+> Bot de WhatsApp multifuncional, interactivo y entretenido, desarrollado sobre la base **Ginko-MD** con un sistema enfocado en gacha, economía virtual, IA y descargas.
 
 <p align="center">
-  <img alt="Stars" src="https://shields.io">
-  <img alt="Forks" src="https://shields.io">
-  <img alt="Issues" src="https://shields.io">
+  <img src="https://shields.io" alt="Status">
+  <img src="https://shields.io" alt="Node.js">
+  <img src="https://shields.io" alt="Ginko-MD">
+  <img src="https://shields.io" alt="WhatsApp">
 </p>
 
 <p align="center">
@@ -23,6 +22,9 @@
     <img src="https://shields.io" alt="Grupo de WhatsApp">
   </a>
 </p>
+
+> [!NOTE]
+> **Mai Sakurajima Bot** está diseñado para ofrecer una experiencia interactiva y divertida dentro de tus grupos y chats privados. Inspirado en el personaje Mai Sakurajima de *Seishun Buta Yarou*.
 
 ---
 
@@ -38,79 +40,135 @@
 
 ## 🌟 Características Principales
 
-*   **🎰 Sistema Gacha:** Colecciona personajes, administra tu inventario y prueba tu suerte.
+*   **🎰 Sistema Gacha:** Colecciona personajes de anime, administra tu inventario y prueba tu suerte.
 *   **💰 Economía Virtual:** Gana monedas, realiza transferencias, compra en la tienda y compite en el ranking.
 *   **🎉 Diversión y Juegos:** Comandos interactivos, juegos en grupo, trivias y respuestas dinámicas.
-*   **🧠 Inteligencia Artificial:** Integración de IA para responder preguntas y conversar con los usuarios.
-*   **📥 Descargas:** Baja música, videos, fotos y contenido de redes sociales directamente en tu chat.
-*   **⚙️ Multi-Device:** Construido sobre la base estable de **Ginko-MD** con soporte para múltiples dispositivos.
+*   **🧠 Inteligencia Artificial:** Integración de IA para responder preguntas y conversar con los usuarios de forma fluida.
+*   **📥 Descargas:** Baja música, videos, fotos y contenido de tus redes sociales favoritas directamente en tu chat.
 
 ---
 
 ## 🚀 Requisitos
 
-*   [Node.js](https://nodejs.org) v16 o superior
-*   [FFmpeg](https://ffmpeg.org) (para el manejo de multimedia y stickers)
-*   [Git](https://git-scm.com)
+Antes de instalar el bot, asegúrate de contar con las siguientes herramientas en tu entorno:
+
+| Requisito | Descripción |
+|---|---|
+| Git | Para clonar el repositorio |
+| Node.js v16+ | Para ejecutar el entorno de JavaScript |
+| FFmpeg | Para el correcto procesamiento de audio, video y stickers |
 
 ---
 
 ## 🛠️ Instalación y Configuración
 
-Sigue estos pasos para clonar e instalar el bot en tu entorno local:
+<details>
+<summary><strong>🐧 Linux / Ubuntu</strong></summary>
 
-### 1. Clonar el repositorio
+```bash
+apt update && apt upgrade -y
+```
+```bash
+apt install git nodejs ffmpeg -y
+```
 ```bash
 git clone https://github.com
+```
+```bash
 cd bunny-girl-bot-v2
 ```
-
-### 2. Instalar las dependencias
 ```bash
 npm install
 ```
-
-### 3. Configurar variables de entorno
-Copia el archivo de ejemplo para crear tu configuración personal:
 ```bash
 cp .env.example .env
 ```
-> 📄 Abre el archivo `.env` y rellena los datos necesarios (claves de API, número de creador, etc.). También puedes ajustar las configuraciones globales directamente en `settings.js`.
-
-### 4. Iniciar el bot
+> Configura el archivo `.env` antes de arrancar.
 ```bash
 npm start
 ```
-> 📱 Escanea el código QR que aparecerá en la terminal desde tu aplicación de WhatsApp (Dispositivos vinculados) para conectar el bot.
+
+</details>
+
+<details>
+<summary><strong>📱 Termux</strong></summary>
+
+```bash
+termux-setup-storage
+```
+```bash
+pkg update && pkg upgrade -y
+```
+```bash
+pkg install -y nodejs-lts git ffmpeg libwebp
+```
+```bash
+git clone https://github.com && cd bunny-girl-bot-v2
+```
+```bash
+npm install
+```
+```bash
+cp .env.example .env
+```
+> Configura tus datos y credenciales en el archivo `.env`.
+```bash
+npm start
+```
+
+</details>
+
+> 📱 Al iniciar, escanea el código QR que aparecerá en tu terminal usando la opción de **Dispositivos vinculados** en tu aplicación de WhatsApp.
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-*   `cmds/`: Contiene todos los comandos del bot organizados por módulos.
-*   `lib/`: Funciones y herramientas de utilidad compartidas.
-*   `index.js` / `handler.js`: Archivos principales de inicio y control de eventos/mensajes.
-*   `database.json`: Almacenamiento local para la economía, gacha y usuarios.
-*   `settings.js`: Archivo de configuración general del bot.
+```txt
+bunny-girl-bot-v2/
+├── cmds/              # Módulos y comandos organizados
+├── lib/               # Librerías y utilidades compartidas
+├── .env.example       # Plantilla de variables de entorno
+├── database.json      # Almacenamiento local (gacha, economía, usuarios)
+├── handler.js         # Controlador de eventos y mensajes
+├── index.js           # Archivo de inicio principal del sistema
+└── settings.js        # Configuraciones globales del bot
+```
 
 ---
 
-## 🤝 Contribuciones
+## 👤 Desarrolladores y Créditos
 
-Las contribuciones, reportes de errores y sugerencias son bienvenidos. 
-1. Haz un **Fork** del proyecto.
-2. Crea una rama con tu nueva función (`git checkout -b feature/NuevaFuncion`).
-3. Haz un commit de tus cambios (`git commit -m 'Añade una nueva función'`).
-4. Sube la rama (`git push origin feature/NuevaFuncion`).
-5. Abre un **Pull Request**.
+Personas que han hecho posible el desarrollo y mantenimiento de **Mai Sakurajima Bot**:
+
+<table align="center">
+<tr>
+<td align="center">
+<a href="https://github.com">
+<img src="https://github.com.png?size=120" width="110px" alt="Adán"><br>
+<sub><b>Adán✯</b></sub>
+</a>
+</td>
+<td align="center">
+<a href="https://github.com">
+<img src="https://github.com.png?size=120" width="110px" alt="DuarteXV"><br>
+<sub><b>DuarteXV</b></sub>
+</a>
+</td>
+</tr>
+</table>
 
 ---
 
-## 👤 Desarrolladores
-*   **Adán✯** — [GitHub Profile](https://github.com)
-*   **DuarteXV**
+## ⚠️ Aclaración Legal
+
+> Este proyecto **no está afiliado, asociado ni respaldado por WhatsApp Inc. o Meta Platforms**. 
+> Ha sido desarrollado con fines recreativos y educativos utilizando librerías open-source.
 
 ---
 
-## 📝 Licencia
-Este proyecto es de uso libre. Dale una ⭐️ al repositorio si te ha sido de utilidad.
+<p align="center">
+  <a href="https://github.com">
+    <img src="https://shields.io" alt="Powered by adan292">
+  </a>
+</p>
