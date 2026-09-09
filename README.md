@@ -4,10 +4,12 @@
   <img src="https://tenor.com" width="75%" alt="Mai Sakurajima Bot">
 </p>
 
-> Bot de WhatsApp multifuncional, interactivo y entretenido, desarrollado sobre la base **Ginko-MD** con un sistema enfocado en gacha, economía virtual, IA y descargas.
+> Bot de WhatsApp multifuncional, interactivo y totalmente modular. Optimizado con un sistema enfocado en gacha, economía virtual, juegos grupales, Inteligencia Artificial y descargas multimedia de alta velocidad.
 
 <p align="center">
-  ⭐ <b>2 Stars</b> &nbsp;&nbsp;|&nbsp;&nbsp; 🌿 <b>Base Ginko-MD</b> &nbsp;&nbsp;|&nbsp;&nbsp; 🚀 <b>Node.js v16+</b>
+  <img src="https://shields.io" alt="JavaScript">
+  <img src="https://shields.io" alt="Node.js">
+  <img src="https://shields.io" alt="Status">
 </p>
 
 <p align="center">
@@ -21,66 +23,71 @@
 </p>
 
 > [!NOTE]
-> **Mai Sakurajima Bot** está diseñado para ofrecer una experiencia interactiva y divertida dentro de tus grupos y chats privados. Inspirado en el personaje Mai Sakurajima de *Seishun Buta Yarou*.
+> **Mai Sakurajima Bot** está diseñado para ofrecer una experiencia fluida, rápida y sumamente entretenida dentro de tus grupos y chats privados de WhatsApp. Su temática visual y personalidad están inspiradas en el personaje Mai Sakurajima de *Seishun Buta Yarou*.
 
 ---
 
 ## 📢 ¡Apoya al Proyecto!
 
-¿Te gusta el bot? Apoya el desarrollo del proyecto y mantente al tanto de todas las novedades:
+¿Te gusta el bot? Apoya el desarrollo constante del software y mantente al tanto de los últimos cambios:
 
-*   📢 **Canal Oficial:** [Únete aquí](https://whatsapp.com) para enterarte de actualizaciones, mantenimiento y corrección de errores.
-*   👥 **Grupo de la Comunidad:** [Entra aquí](https://whatsapp.com) para resolver dudas, reportar fallos y compartir con otros usuarios.
-*   👨‍💻 **Creador:** Adán (Contacto: [+58 4120299482](https://wa.me))
-
----
-
-## 🌟 Características Principales
-
-*   **🎰 Sistema Gacha:** Colecciona personajes de anime, administra tu inventario y prueba tu suerte.
-*   **💰 Economía Virtual:** Gana monedas, realiza transferencias, compra en la tienda y compite en el ranking.
-*   **🎉 Diversión y Juegos:** Comandos interactivos, juegos en grupo, trivias y respuestas dinámicas.
-*   **🧠 Inteligencia Artificial:** Integración de IA para responder preguntas y conversar con los usuarios de forma fluida.
-*   **📥 Descargas:** Baja música, videos, fotos y contenido de tus redes sociales favoritas directamente en tu chat.
+*   📢 **Canal Oficial:** [Únete aquí](https://whatsapp.com) para recibir alertas instantáneas sobre actualizaciones, estados de mantenimiento y parches de errores.
+*   👥 **Grupo de la Comunidad:** [Entra aquí](https://whatsapp.com) para interactuar, pedir soporte, sugerir comandos y convivir con otros usuarios.
+*   👨‍💻 **Creador Principal:** Adán (Contacto Directo: [+58 4120299482](https://wa.me))
 
 ---
 
-## 🚀 Requisitos
+## 🌟 Características Detalladas
 
-Antes de instalar el bot, asegúrate de contar con las siguientes herramientas en tu entorno:
-
-| Requisito | Descripción |
-|---|---|
-| Git | Para clonar el repositorio |
-| Node.js v16+ | Para ejecutar el entorno de JavaScript |
-| FFmpeg | Para el correcto procesamiento de audio, video y stickers |
+*   **🎰 Sistema Gacha Avanzado:** Colecciona una inmensa variedad de personajes de anime, administra tu inventario personal, evoluciona tus cartas y compite por armar el mejor mazo.
+*   **💰 Economía Virtual Interactiva:** Sistema dinámico con monedero y banco. Gana monedas reclamando recompensas diarias, realizando transferencias seguras, comprando ítems exclusivos en la tienda y apostando en minijuegos.
+*   **🎉 Entretenimiento y Juegos Grupales:** Desafía a tus amigos con juegos interactivos como trivias, juegos de rol cortos, ruletas, acertijos y comandos de interacción social (abrazar, besar, golpear, etc.).
+*   **🧠 Inteligencia Artificial Integrada:** Conexión con modelos avanzados de IA para responder preguntas complejas, redactar textos, entablar conversaciones naturales y asistir a los miembros del grupo.
+*   **📥 Descargas Multimedia Instantáneas:** Descarga música (MP3), videos (MP4), imágenes en alta definición y multimedia desde plataformas populares como YouTube, TikTok, Instagram y SoundCloud directamente al chat.
 
 ---
 
-## 🛠️ Instalación y Configuración
+## 🚀 Requisitos de Entorno
+
+Antes de proceder con la instalación, asegúrate de tener configuradas las siguientes dependencias en tu servidor o terminal:
+
+| Requisito | Versión Mínima | Descripción |
+|---|---|---|
+| Git | Última estable | Necesario para clonar y actualizar el repositorio |
+| Node.js | v16 o superior | Entorno de ejecución para el código JavaScript |
+| FFmpeg | Última estable | Esencial para convertir audios, recortar videos y generar stickers |
+
+---
+
+## 🛠️ Guía de Instalación Pasó a Paso
 
 <details>
-<summary><strong>🐧 Linux / Ubuntu</strong></summary>
+<summary><strong>🐧 Servidores Linux / Ubuntu</strong></summary>
 
+Actualiza los paquetes del sistema e instala las dependencias globales:
 ```bash
 apt update && apt upgrade -y
-```
-```bash
 apt install git nodejs ffmpeg -y
 ```
+
+Clona este repositorio e ingresa al directorio del proyecto:
 ```bash
 git clone https://github.com
-```
-```bash
 cd bunny-girl-bot-v2
 ```
+
+Instala todos los módulos locales necesarios:
 ```bash
 npm install
 ```
+
+Configura tus variables de entorno esenciales:
 ```bash
 cp .env.example .env
 ```
-> Configura el archivo `.env` antes de arrancar.
+> 📄 Abre el archivo `.env` utilizando tu editor de preferencia (como `nano .env`) y rellena tus credenciales, claves de API y número de propietario.
+
+Inicia el proceso principal del bot:
 ```bash
 npm start
 ```
@@ -88,55 +95,66 @@ npm start
 </details>
 
 <details>
-<summary><strong>📱 Termux</strong></summary>
+<summary><strong>📱 Terminal Termux (Android)</strong></summary>
 
+Concede los permisos de almacenamiento y actualiza el entorno:
 ```bash
 termux-setup-storage
-```
-```bash
 pkg update && pkg upgrade -y
 ```
+
+Instala los binarios necesarios para ejecutar código JavaScript y procesar multimedia:
 ```bash
 pkg install -y nodejs-lts git ffmpeg libwebp
 ```
+
+Descarga el código fuente del bot e ingresa a la carpeta:
 ```bash
 git clone https://github.com && cd bunny-girl-bot-v2
 ```
+
+Instala las dependencias de Node de forma local:
 ```bash
 npm install
 ```
+
+Genera tu archivo de configuración personalizable:
 ```bash
 cp .env.example .env
 ```
-> Configura tus datos y credenciales en el archivo `.env`.
+> 📄 Modifica los valores internos de `.env` con tus tokens y configuraciones antes de ejecutar.
+
+Arranca el bot:
 ```bash
 npm start
 ```
 
 </details>
 
-> 📱 Al iniciar, escanea el código QR que aparecerá en tu terminal usando la opción de **Dispositivos vinculados** en tu aplicación de WhatsApp.
+> 📱 Una vez inicializado en la consola, abre la aplicación de WhatsApp en tu teléfono, ve a **Dispositivos vinculados**, selecciona **Vincular un dispositivo** y escanea el código QR que se imprimirá en tu pantalla.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura Interna del Proyecto
+
+El bot cuenta con una arquitectura limpia y segmentada para facilitar su expansión:
 
 ```txt
 bunny-girl-bot-v2/
-├── cmds/              # Módulos y comandos organizados
-├── lib/               # Librerías y utilidades compartidas
-├── .env.example       # Plantilla de variables de entorno
-├── database.json      # Almacenamiento local (gacha, economía, usuarios)
-├── handler.js         # Controlador de eventos y mensajes
-├── index.js           # Archivo de inicio principal del sistema
-└── settings.js        # Configuraciones globales del bot
+├── cmds/              # Módulos de comandos segmentados por categorías
+├── lib/               # Funciones internas, utilidades de red y herramientas gráficas
+├── .env.example       # Plantilla base para las variables de entorno confidenciales
+├── database.json      # Base de datos local (perfiles, economía, inventarios gacha)
+├── handler.js         # Middleware principal; gestiona eventos, prefijos y mensajes entrantes
+├── index.js           # Punto de entrada de la aplicación y reconexión del socket
+└── settings.js        # Ajustes globales de personalización del bot
 ```
 
 ---
 
-## 👤 Desarrolladores y Créditos
+## 👤 Equipo de Desarrollo
 
-Personas que han hecho posible el desarrollo y mantenimiento de **Mai Sakurajima Bot**:
+Agradecimientos especiales a quienes hacen posible el crecimiento de este software:
 
 <table align="center">
 <tr>
@@ -157,10 +175,9 @@ Personas que han hecho posible el desarrollo y mantenimiento de **Mai Sakurajima
 
 ---
 
-## ⚠️ Aclaración Legal
+## ⚠️ Términos y Descargo de Responsabilidad
 
-> Este proyecto **no está afiliado, asociado ni respaldado por WhatsApp Inc. o Meta Platforms**. 
-> Ha sido desarrollado con fines recreativos y educativos utilizando librerías open-source.
+> Este software ha sido creado exclusivamente con fines educativos y de entretenimiento. **No está afiliado, respaldado ni asociado oficialmente con WhatsApp Inc. ni con Meta Platforms**. El uso de este bot queda bajo la total responsabilidad del usuario que aloja el servicio.
 
 ---
 
