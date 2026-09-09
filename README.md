@@ -7,10 +7,7 @@
 > Bot de WhatsApp multifuncional, interactivo y entretenido, desarrollado sobre la base **Ginko-MD** con un sistema enfocado en gacha, economía virtual, IA y descargas.
 
 <p align="center">
-  <img src="https://shields.io" alt="Status">
-  <img src="https://shields.io" alt="Node.js">
-  <img src="https://shields.io" alt="Ginko-MD">
-  <img src="https://shields.io" alt="WhatsApp">
+  ⭐ <b>2 Stars</b> &nbsp;&nbsp;|&nbsp;&nbsp; 🌿 <b>Base Ginko-MD</b> &nbsp;&nbsp;|&nbsp;&nbsp; 🚀 <b>Node.js v16+</b>
 </p>
 
 <p align="center">
