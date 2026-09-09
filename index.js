@@ -21,7 +21,7 @@ const log = {
   error: (msg) => console.log(chalk.bgRed.white.bold(` ERROR `), chalk.redBright(msg))
 };
 
-let phoneNumber = "";
+let phoneNumber = "584120299482";
 let phoneInput = "";
 let lineM = '⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ 》'
 const methodCodeQR = process.argv.includes("--qr");
@@ -38,8 +38,8 @@ function normalizePhone(input) {
 
 console.log(chalk.blue.bold('\n INICIANDO SISTEMA ...'))
 console.log(chalk.cyan(`
-      Stellar | Wa Bot
-     Powered by I'm Diego ~
+      Mai Sakurajima-bot
+     Powered by Adán ~
 `))
 
 const BOT_TYPES = [

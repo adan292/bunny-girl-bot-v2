@@ -49,28 +49,25 @@ export default {
 
       const own = await db.getUser(owner);
 
-      let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName}, como está tu día?, mucho gusto mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*
-
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
+      let menu = `> *Hola!* ${msg.pushName}, como esta tu dia?, mucho gusto mi nombre es *${botname2}*
+   
+: *DEVELOPER ::* ${
         owner
           ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-            ? `${own.name}`
+            ? own.name
             : owner
           : 'Oculto por privacidad'
       }
-: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}
-: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}
+: *TIPO ::* ${botType}
+: *SISTEMA/OPER ::* ${device}
 
-: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}
-: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}
-: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}
-: ̗̀❖ *ᴜʀʟ ::* ${link}
+: *TIME ::* ${tiempo}, ${tiempo2}
+: *USERS ::* ${users.toLocaleString()}
+: *MI TIEMPO ::* ${time}
+: *URL ::* ${link}
 
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
+*COMANDOS*
+`;
 
       const categoryArg = args[0]?.toLowerCase();
       const categories = {};
@@ -83,32 +80,41 @@ export default {
 
       if (categoryArg && !categories[categoryArg]) {
         return msg.reply(
-          `《✤》 La categoría *${categoryArg}* no fue encontrada.`
+          `La categoria *${categoryArg}* no fue encontrada.`
         );
       }
 
       for (const [category, cmds] of Object.entries(categories)) {
         if (categoryArg && category.toLowerCase() !== categoryArg) continue;
         const catName = category.charAt(0).toUpperCase() + category.slice(1);
-         menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+        menu += `\n*${catName}*\n`;
+        
         cmds.forEach((cmd) => {
-          const cleanPrefix = prefix
-          const aliases = cmd.alias
-            .map((a) => {
-              const aliasClean = a
-                .split(/[\/#!+.\-]+/)
-                .pop()
-                .toLowerCase()
-              return `${prefix}${aliasClean}`
-            })
-            .join(' › ')
-          menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`
-          menu += `> ✺ ${cmd.desc}\n`
-        })
-          menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
+          try {
+            const cmdAliases = Array.isArray(cmd.alias) 
+              ? cmd.alias 
+              : (cmd.alias ? [cmd.alias] : (cmd.command ? cmd.command : []));
+            
+            const aliases = cmdAliases
+              .map((a) => {
+                let aliasClean = String(a).toLowerCase();
+                const match = aliasClean.match(/[a-z0-9_-]+$/);
+                aliasClean = match ? match[0] : aliasClean;
+                return prefix + aliasClean;
+              })
+              .join(' > ');
+            
+            menu += `• ${aliases}`;
+            if (cmd.uso) menu += ` + ${cmd.uso}`;
+            menu += `\n`;
+            if (cmd.desc) menu += `  └─ ${cmd.desc}\n`;
+          } catch (er) {
+            console.error('Error procesando comando:', cmd, er);
+          }
+        });
       }
 
-      menu += `\n> *${botname2} desarrollado por Diego* ૮(˶ᵔᵕᵔ˶)ა`;
+      menu += `\n> *${botname2} desarrollado por Diego*`;
 
       const isVideo = banner.includes('.mp4') || banner.includes('.gif') || banner.includes('.webm');
       const contextBase = {
@@ -123,14 +129,33 @@ export default {
           { quoted: msg }
         );
       } else {
+        let linkPreviewData = undefined;
+        if (link && banner) {
+          try {
+            const mediaData = await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' });
+            const { imageMessage } = mediaData;
+            linkPreviewData = {
+              'canonical-url': link,
+              'matched-text': link,
+              title: botname,
+              description: `${botname2}, Built With Love By Stellar`,
+              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
+              highQualityThumbnail: imageMessage || undefined
+            };
+          } catch (bannerError) {
+            console.warn('Advertencia: No se pudo cargar banner:', bannerError.message);
+            linkPreviewData = undefined;
+          }
+        }
         await sock.sendMessage(msg.chat, { 
           text: menu.trim(), 
-          linkPreview: link && banner ? (await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }).then(({ imageMessage }) => ({ 'canonical-url': link, 'matched-text': link, title: botname, description: `${botname2}, Built With 💛 By Stellar`, jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined, highQualityThumbnail: imageMessage || undefined }))) : undefined, 
+          linkPreview: linkPreviewData, 
           contextInfo: contextBase
         }, { quoted: msg });
       }
     } catch (e) {
-      await msg.reply(msgglobal);
+      console.error('Error en comando menu:', e);
+      await msg.reply('Error al generar el menu. Intenta de nuevo mas tarde.');
     }
   },
 };
