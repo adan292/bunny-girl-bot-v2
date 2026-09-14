@@ -1,0 +1,38 @@
+{
+  "abono_magico": {
+    "emoji": "💩",
+    "name": "Abono Mágico",
+    "price": 8000,
+    "efecto": "reduce_time",
+    "valor": 0.15,
+    "limit": 3,
+    "desc": "Reduce un 15% el tiempo de crecimiento de una parcela. (Máx 3 por día)"
+  },
+  "pesticida": {
+    "emoji": "🧪",
+    "name": "Pesticida Preventivo",
+    "price": 25000,
+    "efecto": "anti_plaga",
+    "valor": 86400000,
+    "limit": 1,
+    "desc": "Protege toda tu granja de insectos y plagas durante 24 horas. (Máx 1 por día)"
+  },
+  "aspersor": {
+    "emoji": "🚿",
+    "name": "Aspersor Automático",
+    "price": 25000,
+    "efecto": "anti_sequia",
+    "valor": 86400000,
+    "limit": 1,
+    "desc": "Riega automáticamente tu granja previniendo sequías durante 24 horas. (Máx 1 por día)"
+  },
+  "espantapajaros": {
+    "emoji": "🎃",
+    "name": "Espantapájaros",
+    "price": 40000,
+    "efecto": "anti_pudricion",
+    "valor": 86400000,
+    "limit": 1,
+    "desc": "Añade 24 horas extra de margen antes de que tus cosechas listas se pudran. (Máx 1 por día)"
+  }
+}
