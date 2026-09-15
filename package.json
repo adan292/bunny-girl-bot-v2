@@ -1,47 +1,29 @@
 {
-  "name": "ruby-hoshino-md",
-  "version": "2.2.0",
-  "description": "WhatsApp Bot Multi Device",
+  "name": "yuta-bot",
+  "version": "1.0.0",
+  "description": "Yuta Okotsu WhatsApp Bot - Powered by DuarteXV",
   "main": "index.js",
   "type": "module",
-  "directories": {
-    "library": "src/library",
-    "commands": "src/commands",
-    "src": "src"
-  },
   "scripts": {
-    "postinstall": "node scripts/clean-sqlite.js",
-    "code": "node index.js code",
-    "eslint": "eslint .",
-    "eslintfix": "eslint --fix .",
-    "qr": "node index.js qr",
-    "start": "node index.js",
-    "test": "node --check index.js && node --check src/bootstrap/app.js && node --check src/router/handler.js && node --check src/router/plugin-executor.js && node --check src/runtime/middleware-pipeline.js && node --check src/commands/main/gacha-ginfo.js && node --check src/commands/gacha/gacha-claim.js && node --check src/commands/gacha/gacha-rollwaifu.js && node --check src/commands/jadibot/jadibot-resetbot.js && node --check src/commands/settings/_nable.js"
-  },
-  "author": {
-    "name": "Dioneibi-rip"
-  },
-  "license": "MIT-License",
-  "homepage": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot/issues"
+    "start": "node index.js"
   },
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@langchain/core": "^1.2.5",
-    "@langchain/openai": "^1.5.6",
-    "@whiskeysockets/baileys": "github:Dioneibi-rip/Ruby-Baileys",
-    "better-sqlite3": "github:Dioneibi-rip/sqlite3",
-    "googleapis": "^174.0.1",
-    "langchain": "^1.5.5",
-    "node-cron": "^4.6.0",
-    "nodegdt": "github:PixelCrew-Team/RunGdt",
-    "sharp": "^0.35.3",
-    "ws": "^8.18.0",
-    "zod": "^4.4.3"
+    "@napi-rs/canvas": "^0.1.53",
+    "@whiskeysockets/baileys": "github:naut21/Baileys",
+    "axios": "^1.7.2",
+    "better-sqlite3": "^13.0.0",
+    "chalk": "^5.6.2",
+    "figlet": "^1.7.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "formdata-node": "^6.0.3",
+    "got-scraping": "^4.0.0",
+    "gradient-string": "^2.0.2",
+    "jimp": "*",
+    "node-webpmux": "^3.1.7",
+    "pino": "^8.19.0",
+    "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.33.5",
+    "tough-cookie": "^5.1.2",
+    "yt-search": "^2.13.1"
   }
 }
