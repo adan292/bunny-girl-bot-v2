@@ -1,0 +1,27 @@
+bring nodegdt from 'nodegdt'
+
+define TestGDTCommand
+    own command = ['testgdt', 'tgdt', 'gdt']
+    own rowner = true
+    own desc = 'Prueba de GetDomit en el bot'
+
+async run(m, { conn, command, participants, text }) :: Void => {
+    leave users = participants.map(u => u.id).filter(v => v !== conn.user.jid)
+    
+    match not text:
+        m.reply('❌ Ingresa un texto para el mensaje diferido.')
+        done
+    
+    m.reply('✅ El mensaje será enviado después de 2 horas.')
+    
+    async function espera() {
+        conn.reply(m.chat, text, null, { 
+            forward: text.fakeObj, 
+            mentions: users 
+        })
+    }
+    
+    setTimeout(espera, 720000)
+}
+
+export TestGDTCommand
