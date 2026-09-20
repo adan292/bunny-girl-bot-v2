@@ -26,30 +26,18 @@ async function getBannerBuffer(url) {
   lastUsedUrl = url
   return bannerCache
 }
-const catNombres = {
-  "info": "INFO",
-  "misc": "MISC",
-  "dl": "DL",
-  "grupos": "GROUP",
-  "owner": "OWNER",
-  "utils": "UTILS",
-  "stickers": "STICKERS",
-  "sockets": "SOCKETS",
-  "ia": "IA",
-  "economy": "ECONOMY",
-}
 
-const catDescripciones = {
-  "info": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵈᵉ ⁱⁿᶠᵒʳᵐᵃᶜⁱᵒⁿ·",
-  "misc": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵐⁱˢᶜ·",
-  "dl": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵈᵉ ᵈᵉˢᶜᵃʳᵍᵃˢ·",
-  "grupos": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵖᵃʳᵃ ᵍᵉˢᵗⁱᵒⁿᵃʳ ᵍʳᵘᵖᵒˢ·",
-  "owner": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵈᵉ ᵒʷⁿᵉʳ·",
-  "utils": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵘᵗⁱˡᵉˢ·",
-  "stickers": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵖᵃʳᵃ ᵍᵉˢᵗⁱᵒⁿᵃʳ ˢᵗⁱᶜᵏᵉʳˢ·",
-  "sockets": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵖᵃʳᵃ ˢᵘᵇᵇᵒᵗˢ·",
-  "ia": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵈᵉ ⁱⁿᵗᵉˡⁱᵍᵉⁿᶜⁱᵃ ᵃʳᵗⁱᶠⁱᶜⁱᵃˡ·",
-  "economy": "ᶜᵒᵐᵃⁿᵈᵒˢ ᵈᵉ ᵉᶜᵒⁿᵒᵐⁱᵃ·",
+const catNombres = {
+  "info": "𝑰𝑵𝑭𝑶",
+  "misc": "𝑴𝑰𝑺𝑪",
+  "dl": "𝑫𝑳",
+  "grupos": "𝑮𝑹𝑼𝑷𝑶𝑺",
+  "owner": "𝑶𝑾𝑵𝑬𝑹",
+  "utils": "𝑼𝑻𝑰𝑳𝑺",
+  "stickers": "𝑺𝑻𝑰𝑪𝑲𝑬𝑹𝑺",
+  "sockets": "𝑺𝑶𝑪𝑲𝑬𝑻𝑺",
+  "ia": "𝑰𝑨",
+  "economy": "𝑬𝑪𝑶𝑵𝑶𝑴𝒀",
 }
 
 export default {
@@ -74,7 +62,7 @@ export default {
       const esVerdaderoMain = botData?.isMain === true || botData?.isMain === 1;
       const tipoBot = esVerdaderoMain ? "Bot Principal" : "Subbot";
 
-      const linkMatch = "https://mancosyasociados.kesug.com";
+      const linkMatch = "https://github.com/adan292/ʙᴜɴɴʏ-ɢɪʀʟ-ʙᴏᴛ-ᴠ2";
 
       const esOwnerOCoOwner = config.ownerNumber?.includes(senderNum) || config.coOwners?.includes(senderNum)
 
@@ -99,33 +87,32 @@ export default {
         }
       }
 
-      let textoMenu = `*𝐇𝐨𝐥𝐚!* *@${senderNum}* soy "${nombreBot}"\n`;
-      textoMenu += `╭━━━━━━━━━━━━━━━━━━\n`;
-      textoMenu += `│ 𖠌 \`ᴛɪᴘᴏ::\` ${tipoBot}\n`;
-      textoMenu += `│ 𖠌 \`sɪsᴛᴇᴍᴀ/ᴏᴘʀ::\` Android\n`;
-      textoMenu += `│ 𖠌 \`ᴜsᴇʀ::\` @${senderNum}\n`;
-      textoMenu += `│ 𖠌 \`ᴜʀʟ::\` ${linkMatch}\n`;
-      textoMenu += `╰━━━━━━━━━━━━━━━━━━\n\n`;
+      let textoMenu = `✦ 𝐇𝐨𝐥𝐚! 𝐒𝐨𝐲 ✦ \`${nombreBot}\` ✦\n\n`;
+      textoMenu += `┏━━━━━━━━━━━━━━━━━━┓\n`;
+      textoMenu += `┃ ➤ 𝗧𝗶𝗽𝗼: ${tipoBot}\n`;
+      textoMenu += `┃ ➤ 𝗦𝗶𝘀𝘁𝗲𝗺𝗮: Android\n`;
+      textoMenu += `┃ ➤ 𝗨𝘀𝘂𝗮𝗿𝗶𝗼: @${senderNum}\n`;
+      textoMenu += `┃ ➤ 𝗖𝗵𝗮𝘁: ${lugar}\n`;
+      textoMenu += `┃ ➤ 𝗨𝗥𝗟: ${linkMatch}\n`;
+      textoMenu += `┗━━━━━━━━━━━━━━━━━━┛\n\n`;
 
       for (const [cat, cmds] of Object.entries(categories)) {
-        const categoriaLimped = cat.toLowerCase().trim();
-        const nombreFormateado = catNombres[categoriaLimped] || categoriaLimped.toUpperCase();
-        const descripcion = catDescripciones[categoriaLimped] || "ᶜᵒᵐᵃⁿᵈᵒˢ·";
+        const categoriaLimpia = cat.toLowerCase().trim();
+        const nombreFormateado = catNombres[categoriaLimpia] || categoriaLimpia.toUpperCase();
 
-        textoMenu += `𓆩◇𓆪 ⸙ SECTOR│ *${nombreFormateado}* ·°ᰍ.•\n`;
-        textoMenu += `✐꒷ ${descripcion}\n`;
+        textoMenu += `╭─「 ${nombreFormateado} 」\n`;
 
         for (const cmd of cmds) {
-          textoMenu += `> ⏤͟͟͞͞⊱🌀 *${usedPrefix}${cmd}*\n`;
+          textoMenu += `│ ✧ ${usedPrefix}${cmd}\n`;
         }
 
-        textoMenu += `\n`;
+        textoMenu += `╰────────────\n\n`;
       }
 
-      textoMenu += `╭━─━─━─━─━─━─━─━╮\n`;
-      textoMenu += `🪼 _powᧉꭇᧉd ɓy DuarteXV_ │\n`;
-      textoMenu += `🔗 ${linkMatch}\n`;
-      textoMenu += `╰━─━─━─━─━─━─━─━╯`;
+      textoMenu += `╭━━━━━━━━━━━━━━━╮\n`;
+      textoMenu += `┃ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆 𝗔𝗱𝗮𝗻\n`;
+      textoMenu += `┃ 🔗 ${linkMatch}\n`;
+      textoMenu += `╰━━━━━━━━━━━━━━━╯`;
 
       let imgBanner
 
@@ -150,7 +137,7 @@ export default {
           text: textoMenu,
           matchedText: linkMatch,
           canonicalUrl: linkMatch,
-          description: `Powered by DuarteXV | ${nombreBot}`,
+          description: `Powered by Adan | ${nombreBot}`,
           title: nombreBot.toUpperCase(),
           previewType: 0,
           jpegThumbnail: imgBanner.jpegThumbnail,
@@ -163,16 +150,12 @@ export default {
           thumbnailWidth: imgBanner.width || 1920,
           inviteLinkGroupTypeV2: 0,
           contextInfo: {
-            // 🔧 FIX LID: usar "sender" (ya resuelto por messageHandler.js,
-            // con fallback en vivo) en vez de reconstruir el JID a mano
-            // con "${senderNum}@s.whatsapp.net", que rompía cuando
-            // senderNum eran dígitos de un LID no resuelto.
             mentionedJid: [sender],
             isForwarded: true,
             forwardingScore: 1,
             forwardedNewsletterMessageInfo: {
               newsletterJid: "120363420979328566@newsletter",
-              newsletterName: "⏤͟͟͞͞★꙲⃝͟𝐘𝐔𝐓𝐀 𝐎𝐊𝐊𝐎𝐓𝐒𝐔 │ 𝐂𝐇𝐀𝐍𝐍𝐄𝐋 ◌Ⳋ𝅄",
+              newsletterName: "⏤͟͟͞͞★꙲⃝͟𝐌𝐀𝐈 𝐒𝐀𝐊𝐔𝐑𝐀𝐉𝐈𝐌𝐀 │ 𝐂𝐇𝐀𝐍𝐍𝐄𝐋 ◌Ⳋ𝅄",
               serverMessageId: -1
             }
           }
