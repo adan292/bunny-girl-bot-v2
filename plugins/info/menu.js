@@ -153,7 +153,7 @@ export default {
             isForwarded: true,
             forwardingScore: 1,
             forwardedNewsletterMessageInfo: {
-              newsletterJid: "120363420979328566@newsletter",
+              newsletterJid: "120363421987469973@newsletter",
               newsletterName: "⏤͟͟͞͞★꙲⃝͟𝐌𝐀𝐈 𝐒𝐀𝐊𝐔𝐑𝐀𝐉𝐈𝐌𝐀 │ 𝐂𝐇𝐀𝐍𝐍𝐄𝐋 ◌Ⳋ𝅄",
               serverMessageId: -1
             }
