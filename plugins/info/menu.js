@@ -32,7 +32,7 @@ const catNombres = {
   "misc": "𝑴𝑰𝑺𝑪",
   "dl": "𝐃𝐋",
   "grupos": "𝑮𝑹𝑼𝑷𝑶𝑺",
-  "owner": "𝑶𝑑𝑵𝑬𝑹",
+  "owner": "𝑶W𝑵𝑬𝑹",
   "utils": "𝑼𝑻𝑰𝑳𝑺",
   "stickers": "𝑺𝑻𝑰𝑪𝑲𝑬𝑹𝑺",
   "sockets": "𝑺𝑶𝑪𝑲𝑬𝑻𝑺",
