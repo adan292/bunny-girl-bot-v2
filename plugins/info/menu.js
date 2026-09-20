@@ -30,9 +30,9 @@ async function getBannerBuffer(url) {
 const catNombres = {
   "info": "𝑰𝑵𝑭𝑶",
   "misc": "𝑴𝑰𝑺𝑪",
-  "dl": "𝑫𝑳",
+  "dl": "𝐃𝐋",
   "grupos": "𝑮𝑹𝑼𝑷𝑶𝑺",
-  "owner": "𝑶𝑾𝑵𝑬𝑹",
+  "owner": "𝑶𝑑𝑵𝑬𝑹",
   "utils": "𝑼𝑻𝑰𝑳𝑺",
   "stickers": "𝑺𝑻𝑰𝑪𝑲𝑬𝑹𝑺",
   "sockets": "𝑺𝑶𝑪𝑲𝑬𝑻𝑺",
@@ -87,32 +87,31 @@ export default {
         }
       }
 
-      let textoMenu = `✦ 𝐇𝐨𝐥𝐚! 𝐒𝐨𝐲 ✦ \`${nombreBot}\` ✦\n\n`;
-      textoMenu += `┏━━━━━━━━━━━━━━━━━━┓\n`;
-      textoMenu += `┃ ➤ 𝗧𝗶𝗽𝗼: ${tipoBot}\n`;
-      textoMenu += `┃ ➤ 𝗦𝗶𝘀𝘁𝗲𝗺𝗮: Android\n`;
-      textoMenu += `┃ ➤ 𝗨𝘀𝘂𝗮𝗿𝗶𝗼: @${senderNum}\n`;
-      textoMenu += `┃ ➤ 𝗖𝗵𝗮𝘁: ${lugar}\n`;
-      textoMenu += `┃ ➤ 𝗨𝗥𝗟: ${linkMatch}\n`;
-      textoMenu += `┗━━━━━━━━━━━━━━━━━━┛\n\n`;
+      let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 \`𓏲⌗.˚∘ ${nombreBot} ₊˚.்⸙\` 🐇\n\n`;
+      textoMenu += `┏━━━━━━━━━━━━━━━━━━\n\n`;
+      textoMenu += `│ ᰔᩚ ᴛɪᴘᴏ:: ${tipoBot}\n`;
+      textoMenu += `│ ᰔᩚ sɪsᴛᴇᴍᴀ/ᴏᴘʀ:: Android\n`;
+      textoMenu += `│ ᰔᩚ ᴜsᴇʀ:: @${senderNum}\n`;
+      textoMenu += `│ ᰔᩚ  ᴜʀʟ:: ${linkMatch}\n\n`;
+      textoMenu += `┗━━━━━━━━━━━━━━━━━━\n\n\n`;
 
       for (const [cat, cmds] of Object.entries(categories)) {
-        const categoriaLimpia = cat.toLowerCase().trim();
-        const nombreFormateado = catNombres[categoriaLimpia] || categoriaLimpia.toUpperCase();
+        const categoriaLimped = cat.toLowerCase().trim();
+        const nombreFormateado = catNombres[categoriaLimped] || categoriaLimped.toUpperCase();
 
-        textoMenu += `╭─「 ${nombreFormateado} 」\n`;
+        textoMenu += `> ☁️ᩙ̷᷼𖥓┈̶⵿๋    ᩡ"⎯ 𝑺𝑬𝑪𝑻𝑶𝑹 | *${nombreFormateado}*\n\n`;
 
         for (const cmd of cmds) {
-          textoMenu += `│ ✧ ${usedPrefix}${cmd}\n`;
+          textoMenu += `> 𑁯᜔ְ۟⣾͡◌⃘ִׄ⃕᷼🫧⃛⁜̸̷݊┅᳞ ${usedPrefix}${cmd}\n`;
         }
 
-        textoMenu += `╰────────────\n\n`;
+        textoMenu += `\n`;
       }
 
-      textoMenu += `╭━━━━━━━━━━━━━━━╮\n`;
-      textoMenu += `┃ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆 𝗔𝗱𝗮𝗻\n`;
-      textoMenu += `┃ 🔗 ${linkMatch}\n`;
-      textoMenu += `╰━━━━━━━━━━━━━━━╯`;
+      textoMenu += `╭━─━─━─━─━─━─━─━╮\n`;
+      textoMenu += `powᧉꭇᧉd ɓy αԃάɳ│\n`;
+      textoMenu += `🔗 ${linkMatch}\n`;
+      textoMenu += `╰━─━─━─━─━─━─━─━╯`;
 
       let imgBanner
 
