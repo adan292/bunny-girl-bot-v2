@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://whatsapp.com/channel/0029Vb7OVMwJf05bKntqZx1G" target="_blank">
-    <img src="https://shields.io" alt="WhatsApp Channel" height="40">
+    <img src="https://connect.lime-technologies.com/wp-content/uploads/2025/03/whatsapp-button-whatsapp-button-header.png" alt="WhatsApp Channel" height="40">
   </a>
 </p>
 
