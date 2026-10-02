@@ -1,6 +1,10 @@
 # 🐰 Mai Sakurajima Bot — WhatsApp Bot
 
-[![Canal de WhatsApp](https://shields.io)](https://whatsapp.com/channel/0029Vb7OVMwJf05bKntqZx1G)
+<p align="center">
+  <a href="https://whatsapp.com/channel/0029Vb7OVMwJf05bKntqZx1G" target="_blank">
+    <img src="https://shields.io" alt="WhatsApp Channel" height="40">
+  </a>
+</p>
 
 
 <p align="center">
