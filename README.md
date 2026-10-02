@@ -1,5 +1,8 @@
 # 🐰 Mai Sakurajima Bot — WhatsApp Bot
 
+[![Canal de WhatsApp](https://shields.io)](https://whatsapp.com/channel/0029Vb7OVMwJf05bKntqZx1G)
+
+
 <p align="center">
   <img src="https://media1.tenor.com/m/YBY8iBhxW4AAAAAC/anime-sakurajima.gif" alt="Mai Sakurajima Bot" width="350"/>
 </p>
