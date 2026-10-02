@@ -9,7 +9,7 @@
     <img src="https://shields.io" alt="License">
   </a>
   <a href="https://github.com">
-    <img src="https://e7.pngegg.com/pngimages/978/312/png-clipart-logo-red-star-red-star-angle-text-thumbnail.png" alt="Stars">
+    <img src="" alt="Stars">
   </a>
   <a href="https://wa.me">
     <img src="https://shields.io" alt="WhatsApp">
