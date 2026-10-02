@@ -12,7 +12,7 @@
     <img src="" alt="Stars">
   </a>
   <a href="https://wa.me">
-    <img src="https://shields.io" alt="WhatsApp">
+    <img src="https://whatsapp.com/channel/0029Vb7OVMwJf05bKntqZx1G" alt="WhatsApp">
   </a>
 </p>
 
