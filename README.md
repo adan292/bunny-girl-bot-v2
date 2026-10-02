@@ -1,7 +1,7 @@
 # 🐰 Mai Sakurajima Bot — WhatsApp Bot
 
 <p align="center">
-  <img src="https://telegra.ph" alt="Mai Sakurajima Bot" width="350"/>
+  <img src="https://i.pinimg.com/736x/db/9c/cc/db9cccef13d11c59fef91efea87e3bab.jpg" alt="Mai Sakurajima Bot" width="350"/>
 </p>
 
 <p align="center">
