@@ -1,17 +1,19 @@
 import axios from "axios";
 import yts from "yt-search";
 
-const API_KEY = "Duarte-1311-2026";
+const API_KEY = process.env.LEMPI_API_KEY || "Duarte-1311-2026";
 
 export default {
   name: ["play", "yta", "ytmp3", "playaudio"],
   description: "Descarga música de YouTube",
-  category: 'dl',
+  category: "dl",
   ownerOnly: false,
 
   async run({ sock, from, msg, text, reply, react }) {
     try {
-      if (!text.trim()) {
+      const query = (text || "").trim();
+
+      if (!query) {
         return reply({
           text: "⛧ escribe el nombre o link del video",
         });
@@ -19,11 +21,24 @@ export default {
 
       await react("🎧");
 
-      const search = await yts(text);
+      let yt = null;
 
-      const yt =
-        search.videos?.[0] ||
-        search.all?.[0];
+      try {
+        const search = await yts(query);
+        const candidates = [...(search?.videos || []), ...(search?.all || [])];
+        yt = candidates.find((item) => item?.url) || null;
+      } catch (error) {
+        console.error("Error al buscar en YouTube:", error);
+      }
+
+      if (!yt && /(?:youtube\.com|youtu\.be)/i.test(query)) {
+        yt = {
+          title: "YouTube video",
+          url: query,
+          views: 0,
+          seconds: 0,
+        };
+      }
 
       if (!yt) {
         return reply({
@@ -31,53 +46,51 @@ export default {
         });
       }
 
-      const api =
-        `https://api.lempi.lat/dl/yta?apikey=${API_KEY}&url=${encodeURIComponent(yt.url)}`;
+      const youtubeUrl = yt.url;
+      const api = `https://api.lempi.lat/dl/yta?apikey=${API_KEY}&url=${encodeURIComponent(youtubeUrl)}`;
 
-      const res = await axios.get(api, {
-        timeout: 90000,
-      });
+      const res = await axios.get(api, { timeout: 90000 });
+      const data = res?.data;
+      const downloadUrl = data?.datos?.url || data?.download_url || data?.url || null;
 
-      const data = res.data;
-
-      if (!data?.status || !data?.datos?.url) {
+      if (!data?.status || !downloadUrl) {
+        const errorText = data?.message || data?.error || "⛧ no pude obtener el audio";
         return reply({
-          text: "⛧ no pude obtener el audio",
+          text: `⛧ ${errorText}`,
         });
       }
 
-      const title = data.titulo;
-      const thumbnail = data.miniatura;
-      const youtube_url = yt.url;
-      const download_url = data.datos.url;
-      const calidad = data.datos.calidad || "360p";
-      const formato = data.datos.extension?.replace(".", "") || "mp3";
-      const fileName = data.datos.archivo || `${title}.${formato}`;
+      const title = data?.titulo || yt.title || "Audio de YouTube";
+      const thumbnail = data?.miniatura || yt.thumbnail || null;
+      const calidad = data?.datos?.calidad || "360p";
+      const formato = (data?.datos?.extension || "mp3").replace(/^\./, "") || "mp3";
+      const fileName = sanitizeFileName(data?.datos?.archivo || `${title}.${formato}`);
+      const vistas = formatViews(yt.views || 0);
 
-      const vistas = formatViews(yt.views);
+      if (thumbnail) {
+        await sock.sendMessage(
+          from,
+          {
+            image: { url: thumbnail },
+            caption:
+              `⛧ ${title}\n\n` +
+              `⛧ vistas › ${vistas}\n` +
+              `⛧ duración › ${formatDuration(yt.seconds || 0)}\n` +
+              `⛧ calidad › ${calidad}\n` +
+              `⛧ formato › ${formato}\n` +
+              `⛧ link › ${youtubeUrl}`,
+          },
+          { quoted: msg }
+        );
+      }
 
-      await sock.sendMessage(
-        from,
-        {
-          image: { url: thumbnail },
-          caption:
-            `⛧ ${title}\n\n` +
-            `⛧ vistas › ${vistas}\n` +
-            `⛧ duración › ${formatDuration(yt.seconds)}\n` +
-            `⛧ calidad › ${calidad}\n` +
-            `⛧ formato › ${formato}\n` +
-            `⛧ link › ${youtube_url}`
-        },
-        { quoted: msg }
-      );
-
-      const isLongAudio = yt.seconds > 1800; // 30 minutos
+      const isLongAudio = Number(yt.seconds || 0) > 1800;
 
       if (isLongAudio) {
         await sock.sendMessage(
           from,
           {
-            document: { url: download_url },
+            document: { url: downloadUrl },
             mimetype: "audio/mpeg",
             fileName,
             caption: "⛧ audio enviado como documento por duración/tamaño",
@@ -88,7 +101,7 @@ export default {
         await sock.sendMessage(
           from,
           {
-            audio: { url: download_url },
+            audio: { url: downloadUrl },
             mimetype: "audio/mpeg",
             ptt: false,
           },
@@ -97,18 +110,23 @@ export default {
       }
 
       await react("✅");
-
     } catch (e) {
       console.error(e);
-
       await react("❌");
 
-      await reply({
-        text: `⛧ ${e.message}`,
+      return reply({
+        text: `⛧ ${e?.message || "error desconocido"}`,
       });
     }
   },
 };
+
+function sanitizeFileName(name) {
+  return String(name || "audio.mp3")
+    .replace(/[\\/:*?"<>|\n\r]/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function formatViews(views) {
   if (!views) return "No disponible";
