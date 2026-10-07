@@ -2,10 +2,10 @@ export default {
   botName:  "𝒀𝒖𝒕𝒂 𝑶𝒌𝒌𝒐𝒕𝒔𝒖",
   prefix:   ".",
 
-  botname:  "🐰 𝑴𝒂𝒊 𝒔𝒂𝒌𝒖𝒓𝒂𝒋𝒊𝒎𝒂 𝑴𝑫",
+  botname:  "Mai sakurajima",
   wm:       "🐰 𝑴𝒂𝒊 𝒔𝒂𝒌𝒖𝒓𝒂𝒋𝒊𝒎𝒂 𝑴𝑫•Adánzx7",
   author:   "© Adánzx7",
-  dev:      "© 🄿🄾🅆🄴🅁🄴🄳 Adánzx7",
+  dev:      "© 🄿🄾🆆🄴🆁🄴🅳 Adánzx7",
   packname: "🐰 𝑴𝒂𝒊 𝒔𝒂𝒌𝒖𝒓𝒂𝒋𝒊𝒎𝒂 𝑴𝑫 🐰",
   etiqueta: "🐰 Adánzx7 🐰",
   textbot:  "🐰 𝑴𝒂𝒊 𝒔𝒂𝒌𝒖𝒓𝒂𝒋𝒊𝒎𝒂, el hechicero de grado especial. Su amor se convierte en la maldición más poderosa. 🐰",
