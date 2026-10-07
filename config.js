@@ -1,5 +1,5 @@
 export default {
-  botName:  "𝒀𝒖𝒕𝒂 𝑶𝒌𝒌𝒐𝒕𝒔𝒖",
+  botName:  "Mai sakurajima",
   prefix:   ".",
 
   botname:  "Mai sakurajima",
