@@ -9,7 +9,7 @@ const APIS = [
   {
     name: 'alyacore',
     endpoint: 'https://api.alyacore.xyz/dl/ytmp4v2',
-    apikey: 'Duarte-zz12',
+    apikey: 'Bunny_girl_bot*',
     tries: 2,
     timeout: 60000,
     parse: data =>
