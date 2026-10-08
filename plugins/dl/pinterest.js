@@ -48,7 +48,7 @@ export default {
           `💡 *Uso:*\n` +
           `  ✦ ${usedPrefix}pinterest goku\n` +
           `  ✦ ${usedPrefix}pin anime wallpaper\n\n` +
-          `⚔️ _Mai sakurajima MD | Adánzx7_`
+          `🐰 _Mai sakurajima MD | Adánzx7_`
       })
 
       await reply({
@@ -70,7 +70,7 @@ export default {
           text:
             `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
             `❌ No se encontraron imágenes para *${text}*.\n\n` +
-            `⚔️ _Mai sakurajima MD | Adánzx7_`
+            `🐰 _Mai sakurajima MD | Adánzx7_`
         })
       }
 
@@ -84,7 +84,7 @@ export default {
         `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
         `🔎 *Búsqueda:* ${text}\n` +
         `🖼️ *Imágenes:* ${total}\n\n` +
-        `⚔️ _Mai sakurajima MD | Adánzx7_`
+        `🐰 _Mai sakurajima MD | Adánzx7_`
 
       await sendAlbumMessage(sock, from, images, { caption, quoted: msg })
 
@@ -96,7 +96,7 @@ export default {
         text:
           `✨ ═══ 🫧 *PINTEREST* 🫧 ═══ ✨\n\n` +
           `❌ *Error:* ${error.message}\n\n` +
-          `⚔️ _Mai sakurajima MD | Adánzx7_`
+          `🐰 _Mai sakurajima MD | Adánzx7_`
       })
       console.error("Error en pinterest:", error)
     }
