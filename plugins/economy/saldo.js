@@ -2,7 +2,7 @@ import { db } from '../../database/db.js'
 
 export default {
   name: ['saldo', 'balance', 'bal'],
-  description: 'Muestra tu balance de Fragmentos',
+  description: 'Muestra tu balance de mai coins',
   category: 'economy',
   ownerOnly: false,
 
@@ -12,11 +12,11 @@ export default {
 
     await react('💎')
     await reply({
-      text: `💎 *Balance de Fragmentos*\n` +
+      text: `💎 *Balance de mai coins*\n` +
         `╰━━━━━━(☆)━━━━━━─╮\n\n` +
-        `*👜 Bolsillo:* ${eco.bolsillo} Fragmentos\n` +
-        `*🏦 Banco:* ${eco.banco} Fragmentos\n` +
-        `*📊 Total:* ${total} Fragmentos`
+        `*👜 Bolsillo:* ${eco.bolsillo} mai coins\n` +
+        `*🏦 Banco:* ${eco.banco} mai coins\n` +
+        `*📊 Total:* ${total} mai coins`
     })
   }
 }

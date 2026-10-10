@@ -22,7 +22,7 @@ const BONUS_ITEMS = {
 
 export default {
   name: ['work', 'trabajar'],
-  description: 'Trabaja para ganar Fragmentos',
+  description: 'Trabaja para ganar mai coins',
   category: 'economy',
   ownerOnly: false,
 
@@ -61,8 +61,8 @@ export default {
     await react('💰')
     await reply({
       text: `${trabajo.texto}\n\n` +
-        `💰 *Ganaste:* ${ganado} Fragmentos${bonus > 0 ? ` *(+${bonus} bonus de items)*` : ''}\n` +
-        `👜 *Bolsillo actual:* ${nuevoBolsillo} Fragmentos\n\n` +
+        `💰 *Ganaste:* ${ganado} mai coins${bonus > 0 ? ` *(+${bonus} bonus de items)*` : ''}\n` +
+        `👜 *Bolsillo actual:* ${nuevoBolsillo} mai coins\n\n` +
         `> ⏳ Próximo trabajo en *1 hora*`
     })
   }

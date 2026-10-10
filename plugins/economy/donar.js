@@ -11,7 +11,7 @@ function cleanJid(jid = '') {
 
 export default {
   name: ['donar'],
-  description: 'Dona Fragmentos de tu bolsillo a otra persona',
+  description: 'Dona mai coins de tu bolsillo a otra persona',
   category: 'economy',
   ownerOnly: false,
 
@@ -41,10 +41,9 @@ export default {
     const target = cleanJid(targetJid)
 
     if (target === sender) {
-      return await reply({ text: `❌ No puedes donarte Fragmentos a ti mismo.` })
+      return await reply({ text: `❌ No puedes donarte mai coins a ti mismo.` })
     }
 
-    // El monto es el primer argumento que sea número/all, sin importar si @mención va antes
     const rawArg = args.find((a) => a.toLowerCase() === 'all' || a.toLowerCase() === 'todo' || !isNaN(parseInt(a)))
     const senderEco = db.getEco(sender)
 
@@ -60,7 +59,7 @@ export default {
     }
 
     if (cantidad > senderEco.bolsillo) {
-      return await reply({ text: `❌ No tenés suficientes Fragmentos en el bolsillo.\n\n*Bolsillo:* ${senderEco.bolsillo} Fragmentos` })
+      return await reply({ text: `❌ No tenés suficientes mai coins en el bolsillo.\n\n*Bolsillo:* ${senderEco.bolsillo} mai coins` })
     }
 
     const targetEco = db.getEco(target)
@@ -73,8 +72,8 @@ export default {
       text: `🎁 *Donación exitosa*\n\n` +
         `*De:* @${sender.split('@')[0]}\n` +
         `*Para:* @${target.split('@')[0]}\n` +
-        `*Cantidad:* ${cantidad} Fragmentos\n\n` +
-        `*Tu bolsillo:* ${senderEco.bolsillo - cantidad} Fragmentos`,
+        `*Cantidad:* ${cantidad} mai coins\n\n` +
+        `*Tu bolsillo:* ${senderEco.bolsillo - cantidad} mai coins`,
       mentions: [sender, target]
     })
   }

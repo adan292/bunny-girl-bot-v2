@@ -31,10 +31,10 @@ export default {
         const faltante = personaje.precio - eco.bolsillo;
         return await reply({
           text:
-            `❌ No tenés suficientes Fragmentos.\n\n` +
-            `*Precio:* ${personaje.precio.toLocaleString()} Fragmentos\n` +
-            `*Bolsillo:* ${eco.bolsillo.toLocaleString()} Fragmentos\n` +
-            `*Te faltan:* ${faltante.toLocaleString()} Fragmentos`
+            `❌ No tenés suficientes mai coins.\n\n` +
+            `*Precio:* ${personaje.precio.toLocaleString()} mai coins\n` +
+            `*Bolsillo:* ${eco.bolsillo.toLocaleString()} mai coins\n` +
+            `*Te faltan:* ${faltante.toLocaleString()} mai coins`
         });
       }
 
@@ -46,8 +46,8 @@ export default {
       return await reply({
         text:
           `✅ *¡Compraste a ${personaje.nombre}!*\n\n` +
-          `*Precio pagado:* ${personaje.precio.toLocaleString()} Fragmentos\n` +
-          `*Bolsillo restante:* ${(eco.bolsillo - personaje.precio).toLocaleString()} Fragmentos\n\n` +
+          `*Precio pagado:* ${personaje.precio.toLocaleString()} mai coins\n` +
+          `*Bolsillo restante:* ${(eco.bolsillo - personaje.precio).toLocaleString()} mai coins\n\n` +
           `> Usá *.equipar <item> ${personajeId}* para darle equipo`
       });
     }
@@ -60,7 +60,7 @@ export default {
           .setTitle(personaje.nombre)
           .setBody(
             `Generación: ${personaje.generacion === "new_gen" ? "New Gen" : "Old Gen"}\n` +
-            `Precio: ${personaje.precio.toLocaleString()} Fragmentos`
+            `Precio: ${personaje.precio.toLocaleString()} mai coins`
           )
           .setImage(personaje.imagen)
           .addReply(`Comprar ${personaje.nombre}`, `${usedPrefix}buychar ${id}`);
