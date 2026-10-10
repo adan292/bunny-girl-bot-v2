@@ -28,10 +28,10 @@ export default {
     if (eco.bolsillo < item.precio) {
       const faltante = item.precio - eco.bolsillo
       return await reply({
-        text: `❌ No tenés suficientes mai coins.\n\n` +
-          `*Precio:* ${item.precio.toLocaleString()} mai coins\n` +
-          `*Bolsillo:* ${eco.bolsillo.toLocaleString()} mai coins\n` +
-          `*Te faltan:* ${faltante.toLocaleString()} mai coins`
+        text: `❌ No tenés suficientes Fragmentos.\n\n` +
+          `*Precio:* ${item.precio.toLocaleString()} Fragmentos\n` +
+          `*Bolsillo:* ${eco.bolsillo.toLocaleString()} Fragmentos\n` +
+          `*Te faltan:* ${faltante.toLocaleString()} Fragmentos`
       })
     }
 
@@ -45,8 +45,8 @@ export default {
     await reply({
       text: `✅ *Compra exitosa*\n\n` +
         `*Item:* ${item.nombre}\n` +
-        `*Precio pagado:* ${item.precio.toLocaleString()} mai coins\n` +
-        `*Bolsillo restante:* ${(eco.bolsillo - item.precio).toLocaleString()} mai coins\n\n` +
+        `*Precio pagado:* ${item.precio.toLocaleString()} Fragmentos\n` +
+        `*Bolsillo restante:* ${(eco.bolsillo - item.precio).toLocaleString()} Fragmentos\n\n` +
         `> Usá *.equipar ${itemId} <personaje>* para dárselo a un personaje`
     })
   }

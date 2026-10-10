@@ -12,12 +12,12 @@ export default {
     const genericos = Object.entries(ITEMS).filter(([, i]) => !i.restriccion)
     const exclusivos = Object.entries(ITEMS).filter(([, i]) => i.restriccion)
 
-    let texto = `🛒 *Tienda de mai coins*\n╰━━━━━━(☆)━━━━━━─╮\n\n`
+    let texto = `🛒 *Tienda de Fragmentos*\n╰━━━━━━(☆)━━━━━━─╮\n\n`
     texto += `*── Objetos generales (cualquier personaje) ──*\n\n`
 
     for (const [id, item] of genericos) {
       texto += `*${item.nombre}*\n`
-      texto += `   💰 ${item.precio.toLocaleString()} mai coins | ⚡ Poder: ${item.poder}\n`
+      texto += `   💰 ${item.precio.toLocaleString()} Fragmentos | ⚡ Poder: ${item.poder}\n`
       texto += `   🆔 \`${id}\`\n\n`
     }
 
@@ -25,7 +25,7 @@ export default {
 
     for (const [id, item] of exclusivos) {
       texto += `*${item.nombre}*\n`
-      texto += `   💰 ${item.precio.toLocaleString()} mai coins | ⚡ Poder: ${item.poder}\n`
+      texto += `   💰 ${item.precio.toLocaleString()} Fragmentos | ⚡ Poder: ${item.poder}\n`
       texto += `   🔒 Solo: *${item.restriccion}*\n`
       texto += `   🆔 \`${id}\`\n\n`
     }

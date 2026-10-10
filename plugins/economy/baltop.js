@@ -13,7 +13,7 @@ function cleanJid(jid = '') {
 
 export default {
   name: ['baltop', 'ricos'],
-  description: 'Top de usuarios con más mai coins en el grupo',
+  description: 'Top de usuarios con más Fragmentos en el grupo',
   category: 'economy',
   ownerOnly: false,
   groupOnly: true,
@@ -41,7 +41,7 @@ export default {
       .sort((a, b) => b.total - a.total)
 
     if (ranked.length === 0) {
-      return await reply({ text: '📉 Todavía nadie en este grupo tiene mai coins registrados.' })
+      return await reply({ text: '📉 Todavía nadie en este grupo tiene Fragmentos registrados.' })
     }
 
     const totalPaginas = Math.ceil(ranked.length / POR_PAGINA)
@@ -52,12 +52,12 @@ export default {
     const inicio = (pagina - 1) * POR_PAGINA
     const paginaActual = ranked.slice(inicio, inicio + POR_PAGINA)
 
-    let texto = `「✿」Los usuarios con más *mai coins 💰* son:\n\n`
+    let texto = `「✿」Los usuarios con más *Fragmentos 💰* son:\n\n`
 
     texto += paginaActual.map((u, i) => {
       const posicionGlobal = inicio + i + 1
       const nombre = db.getPushName(u.jid) || u.jid.split('@')[0]
-      return `✰ ${posicionGlobal} » *${nombre}*\n\t\t Total→ *${u.total.toLocaleString()} mai coins 💰*`
+      return `✰ ${posicionGlobal} » *${nombre}*\n\t\t Total→ *${u.total.toLocaleString()} Fragmentos 💰*`
     }).join('\n\n')
 
     texto += `\n\n> • Página *${pagina}* de *${totalPaginas}*`

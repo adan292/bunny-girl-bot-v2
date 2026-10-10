@@ -31,11 +31,11 @@ export default {
       if (info) {
         bonusTotal += info.bonus
         texto += `*${info.nombre}*\n`
-        texto += `   ⚡ Bonus: +${info.bonus} mai coins/trabajo\n\n`
+        texto += `   ⚡ Bonus: +${info.bonus} Fragmentos/trabajo\n\n`
       }
     }
 
-    texto += `*📊 Bonus total por trabajo:* +${bonusTotal} mai coins`
+    texto += `*📊 Bonus total por trabajo:* +${bonusTotal} Fragmentos`
 
     await react('🎒')
     await reply({ text: texto })

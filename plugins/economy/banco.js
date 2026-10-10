@@ -2,7 +2,7 @@ import { db } from '../../database/db.js'
 
 export default {
   name: ['depositar', 'retirar'],
-  description: 'Mueve mai coins entre bolsillo y banco',
+  description: 'Mueve Fragmentos entre bolsillo y banco',
   category: 'economy',
   ownerOnly: false,
 
@@ -25,7 +25,7 @@ export default {
 
     if (cmdName === 'depositar') {
       if (cantidad > eco.bolsillo) {
-        return await reply({ text: `❌ No tenés suficientes mai coins en el bolsillo.\n\n*Bolsillo:* ${eco.bolsillo} mai coins` })
+        return await reply({ text: `❌ No tenés suficientes Fragmentos en el bolsillo.\n\n*Bolsillo:* ${eco.bolsillo} Fragmentos` })
       }
 
       db.setEco(sender, {
@@ -36,14 +36,14 @@ export default {
       await react('🏦')
       await reply({
         text: `🏦 *Depósito exitoso*\n\n` +
-          `*Depositado:* ${cantidad} mai coins\n` +
-          `*Bolsillo:* ${eco.bolsillo - cantidad} mai coins\n` +
-          `*Banco:* ${eco.banco + cantidad} mai coins`
+          `*Depositado:* ${cantidad} Fragmentos\n` +
+          `*Bolsillo:* ${eco.bolsillo - cantidad} Fragmentos\n` +
+          `*Banco:* ${eco.banco + cantidad} Fragmentos`
       })
 
     } else if (cmdName === 'retirar') {
       if (cantidad > eco.banco) {
-        return await reply({ text: `❌ No tenés suficientes mai coins en el banco.\n\n*Banco:* ${eco.banco} mai coins` })
+        return await reply({ text: `❌ No tenés suficientes Fragmentos en el banco.\n\n*Banco:* ${eco.banco} Fragmentos` })
       }
 
       db.setEco(sender, {
@@ -54,9 +54,9 @@ export default {
       await react('👜')
       await reply({
         text: `👜 *Retiro exitoso*\n\n` +
-          `*Retirado:* ${cantidad} mai coins\n` +
-          `*Bolsillo:* ${eco.bolsillo + cantidad} mai coins\n` +
-          `*Banco:* ${eco.banco - cantidad} mai coins`
+          `*Retirado:* ${cantidad} Fragmentos\n` +
+          `*Bolsillo:* ${eco.bolsillo + cantidad} Fragmentos\n` +
+          `*Banco:* ${eco.banco - cantidad} Fragmentos`
       })
     }
   }

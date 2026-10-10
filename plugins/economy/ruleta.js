@@ -7,7 +7,7 @@ function getColorFromNumber(number) {
 
 export default {
   name: ["ruleta", "rt", "roulette"],
-  description: "Prueba tu suerte con una ruleta y apuesta mai coins",
+  description: "Prueba tu suerte con una ruleta y apuesta Fragmentos",
   category: "economy",
   groupOnly: true,
 
@@ -35,7 +35,7 @@ export default {
 
     if (bolsilloActual < apuesta) {
       return await reply({
-        text: `❌ No tenés suficientes mai coins para apostar *${apuesta}*.`
+        text: `❌ No tenés suficientes Fragmentos para apostar *${apuesta}*.`
       });
     }
 
@@ -47,8 +47,8 @@ export default {
     db.setEco(sender, { bolsillo: bolsilloActual + ganancia });
 
     const resultado = gano
-      ? `🎉 ¡Ganaste! La bola cayó en *${numero}* (${color}).\n💰 Ganaste *${apuesta}* mai coins.`
-      : `💥 ¡Perdiste! La bola cayó en *${numero}* (${color}).\n💸 Apostaste *${apuesta}* mai coins.`;
+      ? `🎉 ¡Ganaste! La bola cayó en *${numero}* (${color}).\n💰 Ganaste *${apuesta}* Fragmentos.`
+      : `💥 ¡Perdiste! La bola cayó en *${numero}* (${color}).\n💸 Apostaste *${apuesta}* Fragmentos.`;
 
     await reply({ text: resultado });
   }
