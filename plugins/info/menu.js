@@ -57,12 +57,12 @@ export default {
 
       const esLabelAutomatico = botData?.label?.startsWith('SUB_') || botData?.label === 'Subbot' || botData?.label === 'MAIN'
       const nombreBot = (esLabelAutomatico || !botData?.label ? config.botName : botData.label).replace(/@\d+/g, '').trim();
-      const urlFoto = botData?.banner || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZ3I3yi_UR11UOT-UCqAinzcmjqnHlb77CDBW1HR4tRg&s=10";
+      const urlFoto = botData?.banner || "https://cdn.dix.lat/me/f5f104cd-9fb7-4d71-82bf-04bac49f8813.jpg";
 
       const esVerdaderoMain = botData?.isMain === true || botData?.isMain === 1;
       const tipoBot = esVerdaderoMain ? "Bot Principal" : "Subbot";
 
-      const linkMatch = "https://github.com/adan292/ʙᴜɴɴʏ-ɢɪʀʟ-ʙᴏᴛ-ᴠ2";
+      const linkMatch = "https://github.com/adan292/ʙᴄɴɴʏ-ɢɪʀʟ-ʙᴏᴛ-ᴠ2";
 
       const esOwnerOCoOwner = config.ownerNumber?.includes(senderNum) || config.coOwners?.includes(senderNum)
 
@@ -87,7 +87,7 @@ export default {
         }
       }
 
-      let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 `𓏲⌗.˚∘ ${nombreBot} ₊˚.்⸙` 🐇\n\n`;
+      let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 \`𓏲⌗.˚∘ ${nombreBot} ₊˚.்⸙\` 🐇\n\n`;
       textoMenu += `┏━━━━━━━━━━━━━━━━━━\n\n`;
       textoMenu += `│ ᰔᩚ ᴛɪᴘᴏ:: ${tipoBot}\n`;
       textoMenu += `│ ᰔᩚ sɪsᴛᴇᴍᴀ/ᴏᴘʀ:: Android\n`;
