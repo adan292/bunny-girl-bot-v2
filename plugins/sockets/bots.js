@@ -69,7 +69,7 @@ export default {
         report += `⚠️ No hay ningún bot de este sistema dentro de este grupo.\n\n`;
       }
 
-      report += `🪼 _Powered by DuarteXV_`;
+      report += `🪼 _Powered by Adánzx7_`;
 
       await sock.sendMessage(
         from,
