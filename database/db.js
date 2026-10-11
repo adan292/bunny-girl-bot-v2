@@ -107,6 +107,26 @@ export function setGroup(jid, patch = {}) {
   return next;
 }
 
+export function getPrimary(groupJid) {
+  const group = getGroup(groupJid);
+  return group.primary || group.primaryBot || null;
+}
+
+export function setPrimary(groupJid, botNumber) {
+  const group = getGroup(groupJid);
+  const cleanNumber = String(botNumber || "").replace(/@.*$/, "").trim();
+  const next = { ...group, primary: cleanNumber, primaryBot: cleanNumber };
+  return setGroup(groupJid, next);
+}
+
+export function delPrimary(groupJid) {
+  const group = getGroup(groupJid);
+  const next = { ...group };
+  delete next.primary;
+  delete next.primaryBot;
+  return setGroup(groupJid, next);
+}
+
 export function getBot(jid) {
   return getBotEntry(jid);
 }
@@ -185,6 +205,9 @@ export const db = {
   setUser,
   getGroup,
   setGroup,
+  getPrimary,
+  setPrimary,
+  delPrimary,
   getBot,
   setBot,
   hasRole,
