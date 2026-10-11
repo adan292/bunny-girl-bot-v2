@@ -2,14 +2,14 @@ import { db } from '../../database/db.js'
 
 export default {
   name: ['chetar', 'cheat'],
-  description: 'Otorga 1,000,000 de Fragmentos al usuario (solo owners).',
+  description: 'Otorga 50,000,000 de Fragmentos al usuario (solo owners).',
   category: 'economy',
   ownerOnly: true,
 
   async run({ sender, reply, react }) {
     try {
       const eco = db.getEco(sender)
-      const amount = 1000000
+      const amount = 50000000
       const nuevoBolsillo = (eco.bolsillo || 0) + amount
 
       db.setEco(sender, { bolsillo: nuevoBolsillo })
