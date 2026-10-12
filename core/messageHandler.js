@@ -4,6 +4,7 @@ import { getPlugins } from "./pluginLoader.js";
 import { db } from "../database/db.js";
 import { checkAntilink } from "./antilink.js";
 import { handleChatXp, handleCommandXp } from "./xp.js";
+import { handleTttTurn } from "../plugins/economy/ttt.js";
 
 const groupCache = new Map();
 const prefixes = Array.isArray(config.prefix) ? config.prefix : [config.prefix];
@@ -26,8 +27,6 @@ function cleanJid(jid = "") {
 async function resolveLid(lidJid, groupMeta, sock) {
   if (!lidJid || !lidJid.endsWith("@lid")) return lidJid;
 
-  // Tu fork guarda el LID en "p.id" (no "p.lid"), y el número real -cuando
-  // WhatsApp lo comparte- en "p.phoneNumber".
   const match = groupMeta?.participants?.find((p) => cleanJid(p.id || "") === lidJid);
   if (match?.phoneNumber) {
     return cleanJid(match.phoneNumber);
@@ -68,8 +67,6 @@ export async function handleMessage(sock, rawMsg, botLabel = "MAIN", mainBotNum 
     const participantRaw = isGroup ? (msg.key?.participant || msg.participant || "") : "";
     const participantReal = isGroup ? (msg.key?.participantAlt || "") : "";
 
-    // Resolución robusta de sender: no asumimos qué campo trae el LID y cuál el número real,
-    // sino que revisamos cuál de los dos termina en "@lid" y usamos el otro.
     let senderJid;
     if (isGroup) {
       senderJid = participantRaw.endsWith("@lid") && participantReal && !participantReal.endsWith("@lid")
@@ -113,7 +110,7 @@ export async function handleMessage(sock, rawMsg, botLabel = "MAIN", mainBotNum 
       msgType === "ptvMessage" ? "📹 Nota de video" :
       msgType === "reactionMessage" ? "🔥 Reacción" :
       msgType === "contactMessage" ? "👤 Contacto" :
-      msgType === "locationMessage" ? "📍 Ubicación" : "Otro"
+      msgType === "locationMessage" ? "📍 Ubicación" : "Otro";
 
     const usedPrefix = prefixes.find((p) => body.startsWith(p)) ?? null;
     const isCmd = !!usedPrefix;
@@ -219,6 +216,16 @@ export async function handleMessage(sock, rawMsg, botLabel = "MAIN", mainBotNum 
     }
 
     log.message({ from, sender, isGroup, groupName, body, isCmd, cmdName, botLabel, msgTypeLabel });
+
+    if (!isCmd) {
+      const handledTtt = await handleTttTurn(sender, body, {
+        reply: async (content) => {
+          if (typeof content === "string") content = { text: content };
+          return await sock.sendMessage(from, content, { quoted: msg });
+        }
+      });
+      if (handledTtt) return;
+    }
 
     if (!isCmd) return;
 
