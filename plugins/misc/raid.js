@@ -1,5 +1,7 @@
 import { db } from '../../database/db.js'
 
+const SOPORTE_IMG = 'https://cdn.dix.lat/me/hbat_20261012-r2x1-yrha-cb69.jpg'
+
 export default {
   name: ['raid'],
   description: 'Verifica si un número está en soporte (solo owners)',
@@ -57,13 +59,31 @@ export default {
       const isSoporte = !!(user.support || user.soporte || user.inSupport || user.isSupport)
 
       const pushName = db.getPushName(targetJid) || user.pushName || 'Desconocido'
+      const simpleNumber = targetJid.split('@')[0]
 
       if (isSoporte) {
+        // enviar imagen de soporte con caption
+        try {
+          await sock.sendMessage(from, {
+            image: { url: SOPORTE_IMG },
+            caption: `✅ El número *${simpleNumber}* (${pushName}) está en *soporte*.`
+          }, { quoted: msg })
+          await react('✅')
+          return
+        } catch (err) {
+          console.error('[raid] fallo al enviar imagen de soporte, cayendo a texto:', err)
+          await react('⚠️')
+          // seguir y enviar mensaje de texto
+        }
+      }
+
+      // si no es soporte o falló el envío de imagen
+      if (isSoporte) {
         await react('✅')
-        return await reply({ text: `✅ El número *${targetJid.split('@')[0]}* (${pushName}) está en *soporte*.` })
+        return await reply({ text: `✅ El número *${simpleNumber}* (${pushName}) está en *soporte*.` })
       } else {
         await react('❌')
-        return await reply({ text: `❌ El número *${targetJid.split('@')[0]}* (${pushName}) *NO* está en soporte.` })
+        return await reply({ text: `❌ El número *${simpleNumber}* (${pushName}) *NO* está en soporte.` })
       }
 
     } catch (e) {
