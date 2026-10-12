@@ -61,30 +61,41 @@ async function askChatGPT(prompt) {
   return data.result;
 }
 
-export async function handleTttTurn(sender, text, ctx) {
+export async function handleTttTurn(sender, text, ctx, quotedText = "") {
   const game = tttGames.get(sender);
-  if (!game || game.turn !== "player") return false;
+  if (!game) return false;
+
+  // If quotedText is provided, ensure it references the correct game id
+  if (quotedText && (!game.gameId || !quotedText.includes(`[TTT:${game.gameId}]`))) {
+    return false;
+  }
+
+  if (game.turn !== "player") return false;
 
   const move = Number(String(text || "").trim());
   if (!Number.isInteger(move) || move < 1 || move > 9) {
-    await ctx.reply({ text: `🎮 Debés elegir un número del 1 al 9.\n\n${renderBoard(game.board)}` });
+    await ctx.reply({ text: `🎮 Debés elegir un número del 1 al 9.\n\n${renderBoard(game.board)}\n\nResponde QUOTANDO el mensaje del juego con el número.` });
     return true;
   }
 
   const index = move - 1;
   if (game.board[index]) {
-    await ctx.reply({ text: `❌ Esa casilla ya está ocupada.\n\n${renderBoard(game.board)}` });
+    await ctx.reply({ text: `❌ Esa casilla ya está ocupada.\n\n${renderBoard(game.board)}\n\nResponde QUOTANDO el mensaje del juego con el número.` });
     return true;
   }
 
   game.board[index] = "X";
+
+  // include marker in replies
+  const marker = `[TTT:${game.gameId}]`;
 
   if (checkWin(game.board, "X")) {
     const eco = db.getEco(sender);
     const premio = game.bet * 2;
     db.setEco(sender, { bolsillo: (eco.bolsillo || 0) + premio });
     tttGames.delete(sender);
-    await ctx.reply({ text: `🎉 ¡Ganaste! Te llevás *${premio}* Fragmentos.\n\n${renderBoard(game.board)}` });
+
+    await ctx.reply({ text: `🎉 ¡Ganaste! Te llevás *${premio}* Fragmentos.\n\n${renderBoard(game.board)}\n\n${marker}` });
     return true;
   }
 
@@ -92,12 +103,13 @@ export async function handleTttTurn(sender, text, ctx) {
     const eco = db.getEco(sender);
     db.setEco(sender, { bolsillo: (eco.bolsillo || 0) + game.bet });
     tttGames.delete(sender);
-    await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}` });
+
+    await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}\n\n${marker}` });
     return true;
   }
 
   try {
-    const prompt = `Eres un jugador experto de tres en raya. Debes jugar con "O". El tablero actual es: ${JSON.stringify(game.board.map(v => v || "-"))}. Devuelve SOLO JSON con la propiedad "move" indicando el índice 0-8 donde vas a jugar. No agregues texto extra.`;
+    const prompt = `Eres un jugador experto de tres en raya. Debes jugar con \"O\". El tablero actual es: ${JSON.stringify(game.board.map(v => v || "-"))}. Devuelve SOLO JSON con la propiedad \"move\" indicando el índice 0-8 donde vas a jugar. No agregues texto extra.`;
     const aiReply = await askChatGPT(prompt);
     let aiMove = parseAIMove(aiReply);
 
@@ -110,7 +122,7 @@ export async function handleTttTurn(sender, text, ctx) {
       const eco = db.getEco(sender);
       db.setEco(sender, { bolsillo: (eco.bolsillo || 0) + game.bet });
       tttGames.delete(sender);
-      await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}` });
+      await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}\n\n${marker}` });
       return true;
     }
 
@@ -118,7 +130,7 @@ export async function handleTttTurn(sender, text, ctx) {
 
     if (checkWin(game.board, "O")) {
       tttGames.delete(sender);
-      await ctx.reply({ text: `💥 La IA ganó. Perdiste *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}` });
+      await ctx.reply({ text: `💥 La IA ganó. Perdiste *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}\n\n${marker}` });
       return true;
     }
 
@@ -126,11 +138,12 @@ export async function handleTttTurn(sender, text, ctx) {
       const eco = db.getEco(sender);
       db.setEco(sender, { bolsillo: (eco.bolsillo || 0) + game.bet });
       tttGames.delete(sender);
-      await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}` });
+      await ctx.reply({ text: `🤝 Empate. Te devolvemos tu apuesta de *${game.bet}* Fragmentos.\n\n${renderBoard(game.board)}\n\n${marker}` });
       return true;
     }
 
-    await ctx.reply({ text: `🎮 Tu turno.\n\n${renderBoard(game.board)}` });
+    // still ongoing
+    await ctx.reply({ text: `🎮 Tu turno.\n\n${renderBoard(game.board)}\n\n${marker}` });
     return true;
   } catch (err) {
     tttGames.delete(sender);
@@ -159,15 +172,20 @@ export default {
 
     db.setEco(sender, { bolsillo: (eco.bolsillo || 0) - bet });
 
+    const gameId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
     const game = {
       sender,
       bet,
       board: Array(9).fill(null),
-      turn: "player"
-    };
+      turn: "player",
+      gameId
+n    };
 
     tttGames.set(sender, game);
     await react("🎮");
-    await reply({ text: `🎮 *Apuesta:* ${bet} Fragmentos\n\n${renderBoard(game.board)}\n\nTu turno: escribí un número del 1 al 9.` });
+    // include a unique marker so users can reply to the correct game message
+    const marker = `[TTT:${gameId}]`;
+    await reply({ text: `🎮 *Apuesta:* ${bet} Fragmentos\n\n${renderBoard(game.board)}\n\nResponde a este mensaje con el número de la casilla (1-9) para jugar.\n\n${marker}` });
   }
 };
