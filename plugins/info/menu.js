@@ -87,12 +87,15 @@ export default {
         }
       }
 
+      if (!categories.economy) categories.economy = new Set();
+      categories.economy.add("ttt");
+
       let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 \`𓏲⌗.˚∘ ${nombreBot} ₊˚.்⸙\` 🐇\n\n`;
       textoMenu += `┏━━━━━━━━━━━━━━━━━━\n\n`;
       textoMenu += `│ ᰔᩚ ᴛɪᴘᴏ:: ${tipoBot}\n`;
       textoMenu += `│ ᰔᩚ sɪsᴛᴇᴍᴀ/ᴏᴘʀ:: Android\n`;
       textoMenu += `│ ᰔᩚ ᴜsᴇʀ:: @${senderNum}\n`;
-      textoMenu += `│ ᰔᩚ  ᴜʀʟ:: ${linkMatch}\n\n`;
+      textoMenu += `│ ᰔᩚ  ᴄʟɪᴇɴᴛᴇ:: ${nombreBot}\n\n`;
       textoMenu += `┗━━━━━━━━━━━━━━━━━━\n\n\n`;
 
       for (const [cat, cmds] of Object.entries(categories)) {
