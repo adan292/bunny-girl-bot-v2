@@ -87,10 +87,7 @@ export default {
         }
       }
 
-      if (!categories.economy) categories.economy = new Set();
-      categories.economy.add("ttt");
-
-      let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 \`𓏲⌗.˚∘ ${nombreBot} ₊˚.்⸙\` 🐇\n\n`;
+      let textoMenu = `𝐇𝐨𝐥𝐚!  𝐒𝐨𝐲 🐇 \`𓏲⌗.˚∘ ${nombreBot} ₊˚.్⸙\` 🐇\n\n`;
       textoMenu += `┏━━━━━━━━━━━━━━━━━━\n\n`;
       textoMenu += `│ ᰔᩚ ᴛɪᴘᴏ:: ${tipoBot}\n`;
       textoMenu += `│ ᰔᩚ sɪsᴛᴇᴍᴀ/ᴏᴘʀ:: Android\n`;
