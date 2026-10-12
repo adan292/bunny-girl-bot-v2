@@ -4,7 +4,6 @@ import { getPlugins } from "./pluginLoader.js";
 import { db } from "../database/db.js";
 import { checkAntilink } from "./antilink.js";
 import { handleChatXp, handleCommandXp } from "./xp.js";
-import { handleTttTurn } from "../plugins/economy/ttt.js";
 
 const groupCache = new Map();
 const prefixes = Array.isArray(config.prefix) ? config.prefix : [config.prefix];
@@ -216,16 +215,6 @@ export async function handleMessage(sock, rawMsg, botLabel = "MAIN", mainBotNum 
     }
 
     log.message({ from, sender, isGroup, groupName, body, isCmd, cmdName, botLabel, msgTypeLabel });
-
-    if (!isCmd) {
-      const handledTtt = await handleTttTurn(sender, body, {
-        reply: async (content) => {
-          if (typeof content === "string") content = { text: content };
-          return await sock.sendMessage(from, content, { quoted: msg });
-        }
-      });
-      if (handledTtt) return;
-    }
 
     if (!isCmd) return;
 
