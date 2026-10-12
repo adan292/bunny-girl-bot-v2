@@ -1,6 +1,7 @@
 import { db } from '../../database/db.js'
 
 const SOPORTE_IMG = 'https://cdn.dix.lat/me/hbat_20261012-r2x1-yrha-cb69.jpg'
+const NO_SOPORTE_IMG = 'https://cdn.dix.lat/me/qif4_20261012-r2x1-t6qq-81b5.jpg'
 
 export default {
   name: ['raid'],
@@ -25,7 +26,6 @@ export default {
         const contextInfo = msg.message?.extendedTextMessage?.contextInfo
         const quoted = contextInfo?.quotedMessage
         if (quoted) {
-          // si se respondió a un mensaje, tomar el participante del quoted
           const participant = contextInfo?.participant || contextInfo?.remoteJid
           if (participant) target = participant
         }
@@ -40,9 +40,7 @@ export default {
       function normalize(input) {
         if (!input) return null
         input = input.toString().trim()
-        // si ya tiene @... dejar tal cual
         if (input.includes('@')) return input
-        // eliminar símbolos y espacios
         const digits = input.replace(/[^0-9]/g, '')
         if (!digits) return null
         return `${digits}@s.whatsapp.net`
@@ -55,37 +53,28 @@ export default {
       }
 
       const user = db.getUser(targetJid)
-
       const isSoporte = !!(user.support || user.soporte || user.inSupport || user.isSupport)
 
       const pushName = db.getPushName(targetJid) || user.pushName || 'Desconocido'
       const simpleNumber = targetJid.split('@')[0]
 
-      if (isSoporte) {
-        // enviar imagen de soporte con caption
-        try {
-          await sock.sendMessage(from, {
-            image: { url: SOPORTE_IMG },
-            caption: `✅ El número *${simpleNumber}* (${pushName}) está en *soporte*.`
-          }, { quoted: msg })
-          await react('✅')
-          return
-        } catch (err) {
-          console.error('[raid] fallo al enviar imagen de soporte, cayendo a texto:', err)
-          await react('⚠️')
-          // seguir y enviar mensaje de texto
-        }
-      }
+      const imageUrl = isSoporte ? SOPORTE_IMG : NO_SOPORTE_IMG
+      const caption = isSoporte
+        ? `✅ El número *${simpleNumber}* (${pushName}) está en *soporte*.`
+        : `❌ El número *${simpleNumber}* (${pushName}) *NO* está en soporte.`
 
-      // si no es soporte o falló el envío de imagen
-      if (isSoporte) {
-        await react('✅')
-        return await reply({ text: `✅ El número *${simpleNumber}* (${pushName}) está en *soporte*.` })
-      } else {
-        await react('❌')
-        return await reply({ text: `❌ El número *${simpleNumber}* (${pushName}) *NO* está en soporte.` })
+      try {
+        await sock.sendMessage(from, {
+          image: { url: imageUrl },
+          caption
+        }, { quoted: msg })
+        await react(isSoporte ? '✅' : '❌')
+        return
+      } catch (err) {
+        console.error('[raid] fallo al enviar imagen, cayendo a texto:', err)
+        await react('⚠️')
+        return await reply({ text: caption })
       }
-
     } catch (e) {
       console.error('[raid]', e)
       try { await react('❌') } catch {}
