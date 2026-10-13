@@ -109,10 +109,10 @@ export default {
         textoMenu += `\n`;
       }
 
-      textoMenu += `╭━─━─━─━─━─━─━─━╮\n`;
+      textoMenu += `╭━─━─━─━─━╮\n`;
       textoMenu += `powᧉꭇᧉd ɓy αԃάɳ│\n`;
       textoMenu += `🔗 ${linkMatch}\n`;
-      textoMenu += `╰━─━─━─━─━─━─━─━╯`;
+      textoMenu += `╰━─━─━─━─━╯`;
 
       let imgBanner
 
