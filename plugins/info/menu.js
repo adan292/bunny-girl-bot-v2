@@ -62,7 +62,8 @@ export default {
       const esVerdaderoMain = botData?.isMain === true || botData?.isMain === 1;
       const tipoBot = esVerdaderoMain ? "Bot Principal" : "Subbot";
 
-      const linkMatch = "https://github.com/adan292/ʙᴄɴɴʏ-ɢɪʀʟ-ʙᴏᴛ-ᴠ2";
+      // Use an ASCII-safe repository URL to avoid unicode characters breaking previews
+      const linkMatch = "https://github.com/adan292/bunny-girl-bot-v2";
 
       const esOwnerOCoOwner = config.ownerNumber?.includes(senderNum) || config.coOwners?.includes(senderNum)
 
