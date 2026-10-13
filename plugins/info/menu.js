@@ -113,56 +113,93 @@ export default {
       textoMenu += `🔗 ${linkMatch}\n`;
       textoMenu += `╰━─━─━─━─━─━─━─━╯`;
 
-      let imgBanner
+      // prepare banner safely
+      let imgBanner = null
+      let bufferBanner = null
+
+      try {
+        bufferBanner = await getBannerBuffer(urlFoto)
+      } catch (err) {
+        console.warn('[menu] no se pudo descargar banner:', err?.message || err)
+        bufferBanner = null
+      }
 
       if (mediaCache && lastUsedUrl === urlFoto && Date.now() - mediaCacheTime < 3600000) {
         imgBanner = mediaCache
-      } else {
-        const bufferBanner = await getBannerBuffer(urlFoto)
-        const mediaBanner = await prepareWAMessageMedia(
-          { image: bufferBanner },
-          { upload: sock.waUploadToServer, mediaTypeOverride: "thumbnail-link" }
-        )
-        imgBanner = mediaBanner.imageMessage
-        mediaCache = imgBanner
-        mediaCacheTime = Date.now()
+      } else if (bufferBanner) {
+        try {
+          const mediaBanner = await prepareWAMessageMedia(
+            { image: bufferBanner },
+            { upload: sock.waUploadToServer, mediaTypeOverride: "thumbnail-link" }
+          )
+          imgBanner = mediaBanner.imageMessage
+          mediaCache = imgBanner
+          mediaCacheTime = Date.now()
+        } catch (e) {
+          console.warn('[menu] prepareWAMessageMedia falló:', e?.message || e)
+          imgBanner = null
+        }
+      }
+
+      // If we couldn't build the rich preview, fallback to sending the image with caption or plain text
+      if (!imgBanner) {
+        try {
+          if (bufferBanner) {
+            await sock.sendMessage(from, { image: bufferBanner, caption: textoMenu, mentions: [sender] })
+          } else {
+            await sock.sendMessage(from, { text: textoMenu, mentions: [sender] })
+          }
+        } catch (e) {
+          console.error('[menu] fallo al enviar fallback:', e?.message || e)
+        }
+        return
       }
 
       const getTs = (ts) => typeof ts === "object" ? Number(ts.low || ts) : Number(ts);
 
-      const content = {
-        extendedTextMessage: {
-          endCardTiles: [],
-          text: textoMenu,
-          matchedText: linkMatch,
-          canonicalUrl: linkMatch,
-          description: `Powered by Adan | ${nombreBot}`,
-          title: nombreBot.toUpperCase(),
-          previewType: 0,
-          jpegThumbnail: imgBanner.jpegThumbnail,
-          thumbnailDirectPath: imgBanner.directPath,
-          thumbnailSha256: imgBanner.fileSha256,
-          thumbnailEncSha256: imgBanner.fileEncSha256,
-          mediaKey: imgBanner.mediaKey,
-          mediaKeyTimestamp: getTs(imgBanner.mediaKeyTimestamp),
-          thumbnailHeight: imgBanner.height || 1080,
-          thumbnailWidth: imgBanner.width || 1920,
-          inviteLinkGroupTypeV2: 0,
-          contextInfo: {
-            mentionedJid: [sender],
-            isForwarded: true,
-            forwardingScore: 1,
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: "120363421987469973@newsletter",
-              newsletterName: "⏤͟͟͞͞★꙲⃝͟𝐌𝐀𝐈 𝐒𝐀𝐊𝐔𝐑𝐀𝐉𝐈𝐌𝐀 │ 𝐂𝐇𝐀𝐍𝐍𝐄𝐋 ◌Ⳋ𝅄",
-              serverMessageId: -1
-            }
+      const extended = {
+        endCardTiles: [],
+        text: textoMenu,
+        matchedText: linkMatch,
+        canonicalUrl: linkMatch,
+        description: `Powered by Adan | ${nombreBot}`,
+        title: nombreBot.toUpperCase(),
+        previewType: 0,
+        // add thumbnail fields only if present
+        ...(imgBanner.jpegThumbnail ? { jpegThumbnail: imgBanner.jpegThumbnail } : {}),
+        ...(imgBanner.directPath ? { thumbnailDirectPath: imgBanner.directPath } : {}),
+        ...(imgBanner.fileSha256 ? { thumbnailSha256: imgBanner.fileSha256 } : {}),
+        ...(imgBanner.fileEncSha256 ? { thumbnailEncSha256: imgBanner.fileEncSha256 } : {}),
+        ...(imgBanner.mediaKey ? { mediaKey: imgBanner.mediaKey } : {}),
+        ...(imgBanner.mediaKeyTimestamp ? { mediaKeyTimestamp: getTs(imgBanner.mediaKeyTimestamp) } : {}),
+        thumbnailHeight: imgBanner.height || 1080,
+        thumbnailWidth: imgBanner.width || 1920,
+        inviteLinkGroupTypeV2: 0,
+        contextInfo: {
+          mentionedJid: [sender],
+          isForwarded: true,
+          forwardingScore: 1,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363421987469973@newsletter",
+            newsletterName: "⏤͟͟͞͞★꙲⃝͟𝐌𝐀𝐈 𝐒𝐀𝐊𝐔𝐑𝐀𝐉𝐈𝐌𝐀 │ 𝐂𝐇𝐀𝐍𝐍𝐄𝐋 ◌Ⳋ𝅄",
+            serverMessageId: -1
           }
         }
-      };
+      }
 
-      const waMsg = generateWAMessageFromContent(from, content, { userJid: sock.user?.id, quoted: msg })
-      await sock.relayMessage(from, waMsg.message, { messageId: waMsg.key.id })
+      const content = { extendedTextMessage: extended }
+
+      try {
+        const waMsg = generateWAMessageFromContent(from, content, { userJid: sock.user?.id, quoted: msg })
+        await sock.relayMessage(from, waMsg.message, { messageId: waMsg.key.id })
+      } catch (e) {
+        console.error('[menu] fallo al enviar mensaje con preview:', e?.message || e)
+        // last resort fallback
+        try {
+          if (bufferBanner) await sock.sendMessage(from, { image: bufferBanner, caption: textoMenu, mentions: [sender] })
+          else await sock.sendMessage(from, { text: textoMenu, mentions: [sender] })
+        } catch (err) { console.error('[menu] fallback final falló:', err?.message || err) }
+      }
 
     } catch (error) {
       console.error("Error crítico en el comando menu:", error);
