@@ -111,7 +111,6 @@ export default {
 
       textoMenu += `╭━─━─━─━─━╮\n`;
       textoMenu += `powᧉꭇᧉd ɓy αԃάɳ│\n`;
-      textoMenu += `🔗 ${linkMatch}\n`;
       textoMenu += `╰━─━─━─━─━╯`;
 
       let imgBanner
