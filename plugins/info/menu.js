@@ -92,6 +92,7 @@ export default {
       textoMenu += `│ ᰔᩚ ᴛɪᴘᴏ:: ${tipoBot}\n`;
       textoMenu += `│ ᰔᩚ sɪsᴛᴇᴍᴀ/ᴏᴘʀ:: Android\n`;
       textoMenu += `│ ᰔᩚ ᴜsᴇʀ:: @${senderNum}\n`;
+      textoMenu += `│ ᰔᩚ ᴜʀʟ:: ${linkMatch}\n`;
       textoMenu += `│ ᰔᩚ  ᴄʟɪᴇɴᴛᴇ:: ${nombreBot}\n\n`;
       textoMenu += `┗━━━━━━━━━━━━━━━━━━\n\n\n`;
 
@@ -110,8 +111,8 @@ export default {
 
       textoMenu += `╭━─━─━─━─━─━─━─━╮\n`;
       textoMenu += `powᧉꭇᧉd ɓy αԃάɳ│\n`;
-      textoMenu += `╰━─━─━─━─━─━─━─━╯\n`;
-      textoMenu += `${linkMatch}`;
+      textoMenu += `🔗 ${linkMatch}\n`;
+      textoMenu += `╰━─━─━─━─━─━─━─━╯`;
 
       let imgBanner
 
