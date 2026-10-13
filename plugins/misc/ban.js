@@ -30,16 +30,16 @@ export default {
 
       if (!target) {
         await react('❌')
-        return await reply({ text: '❌ Debes especificar un número.
-
-Uso: `.ban 5731xxxxxxx` o responde a un mensaje con `.ban`' })
+        return await reply({
+          text: '❌ Debes especificar un número.\n\nUso: `.ban 5731xxxxxxx` o responde a un mensaje con `.ban`'
+        })
       }
 
-      function normalize(input) {
-        if (!input) return null
-        input = input.toString().trim()
-        if (input.includes('@')) return input
-        const digits = input.replace(/[^0-9]/g, '')
+      const normalize = (value) => {
+        if (!value) return null
+        const text = value.toString().trim()
+        if (text.includes('@')) return text
+        const digits = text.replace(/\D/g, '')
         if (!digits) return null
         return `${digits}@s.whatsapp.net`
       }
@@ -54,11 +54,15 @@ Uso: `.ban 5731xxxxxxx` o responde a un mensaje con `.ban`' })
       db.setUser(targetJid, { support: true })
 
       const simpleNumber = targetJid.split('@')[0]
-      const pushName = db.getPushName(targetJid) || db.getUser(targetJid).pushName || 'Desconocido'
+      const user = db.getUser(targetJid)
+      const pushName = db.getPushName(targetJid) || user?.pushName || 'Desconocido'
 
       // notificar a todos los owners configurados
       const owners = Array.isArray(config.ownerNumber) ? config.ownerNumber : []
-      const notifyText = `📣 *Notificación de Soporte*\n\nEl número *${simpleNumber}* (${pushName}) ha sido enviado a *soporte* por @${senderJid.split('@')[0]}.\n\nUsa *.raid ${simpleNumber}* para comprobar su estado.`
+      const notifyText =
+        `📣 *Notificación de Soporte*\n\n` +
+        `El número *${simpleNumber}* (${pushName}) ha sido enviado a *soporte* por *@${(senderJid || '').split('@')[0]}*.\n\n` +
+        `Usa *.raid ${simpleNumber}* para revisar o controlar esta cuenta.`
 
       for (const num of owners) {
         const ownerJid = `${num}@s.whatsapp.net`
