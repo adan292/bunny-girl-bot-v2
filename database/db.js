@@ -44,6 +44,27 @@ const stmts = {
   deleteBot: db_instance.prepare("DELETE FROM bots WHERE jid = ?")
 };
 
+function asBigInt(value, fallback = 0n) {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "null" || trimmed === "undefined") return fallback;
+    try {
+      return BigInt(trimmed);
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return BigInt(Math.trunc(value));
+  }
+  return fallback;
+}
+
+function normalizeEcoValue(value) {
+  return asBigInt(value, 0n).toString();
+}
+
 function getUser(jid) {
   const row = stmts.getUser.get(jid);
   if (!row) {
@@ -191,8 +212,6 @@ export const db = {
     stmts.updateGroup.run(JSON.stringify(group), groupJid);
   },
 
-  // 👤 NOMBRE DE PERFIL (persistente, sobrevive reinicios)
-  // Solo escribe si el nombre cambió, para no golpear la DB en cada mensaje.
   setPushName(jid, name) {
     if (!jid || !name) return;
     const user = getUser(jid);
@@ -205,22 +224,23 @@ export const db = {
     return getUser(jid).pushName || null;
   },
 
-  // 💰 ECONOMÍA — Fragmentos
   getEco(jid) {
     const user = getUser(jid);
     return {
-      bolsillo: user.bolsillo ?? 0,
-      banco: user.banco ?? 0,
+      bolsillo: asBigInt(user.bolsillo, 0n),
+      banco: asBigInt(user.banco, 0n),
       inventario: user.inventario ?? [],
       lastWork: user.lastWork ?? 0
     };
   },
 
   setEco(jid, dataObject) {
-    db.setUser(jid, dataObject);
+    const normalized = { ...dataObject };
+    if (normalized.bolsillo !== undefined) normalized.bolsillo = normalizeEcoValue(normalized.bolsillo);
+    if (normalized.banco !== undefined) normalized.banco = normalizeEcoValue(normalized.banco);
+    db.setUser(jid, normalized);
   },
 
-  // 💍 MATRIMONIO
   getMarriage(jid) {
     return getUser(jid).partner || null;
   },
@@ -245,7 +265,6 @@ export const db = {
     stmts.updateUser.run(JSON.stringify(user), jid);
   },
 
-  // 🚻 GÉNERO (hombre / mujer)
   setGenero(jid, genero) {
     db.setUser(jid, { genero });
   },
@@ -254,3 +273,19 @@ export const db = {
     return getUser(jid).genero || null;
   },
 };
+
+export function formatBigInt(value) {
+  const n = asBigInt(value, 0n);
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+export function bigIntFromInput(value, fallback = 0n) {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number') return BigInt(Math.trunc(value));
+  if (typeof value === 'string') {
+    const cleaned = value.trim();
+    if (!cleaned) return fallback;
+    try { return BigInt(cleaned); } catch { return fallback; }
+  }
+  return fallback;
+}

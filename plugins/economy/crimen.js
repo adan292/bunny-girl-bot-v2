@@ -32,15 +32,15 @@ export default {
     const eco = db.getEco(sender);
 
     if (success) {
-      const amount = Math.floor(Math.random() * 400) + 150;
-      db.setEco(sender, { bolsillo: (eco.bolsillo || 0) + amount });
+      const amount = BigInt(Math.floor(Math.random() * 400) + 150);
+      db.setEco(sender, { bolsillo: eco.bolsillo + amount });
       const frase = CRIMENES_EXITO[Math.floor(Math.random() * CRIMENES_EXITO.length)];
-      await reply({ text: `🔫 ${frase}\n*+${amount}* monedas.` });
+      await reply({ text: `🔫 ${frase}\n*+${amount.toString()}* monedas.` });
     } else {
-      const fine = Math.floor(Math.random() * 250) + 100;
-      db.setEco(sender, { bolsillo: Math.max(0, (eco.bolsillo || 0) - fine) });
+      const fine = BigInt(Math.floor(Math.random() * 250) + 100);
+      db.setEco(sender, { bolsillo: eco.bolsillo - fine > 0n ? eco.bolsillo - fine : 0n });
       const frase = CRIMENES_FALLO[Math.floor(Math.random() * CRIMENES_FALLO.length)];
-      await reply({ text: `🚔 ${frase}\nPagaste una multa de *${fine}* monedas.` });
+      await reply({ text: `🚔 ${frase}\nPagaste una multa de *${fine.toString()}* monedas.` });
     }
   }
 };

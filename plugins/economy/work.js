@@ -14,10 +14,10 @@ const TRABAJOS = [
 ]
 
 const BONUS_ITEMS = {
-  'pala':              50,
-  'pico':             120,
-  'katana_maldita':   300,
-  'cristal_dominio':  600,
+  'pala': 50,
+  'pico': 120,
+  'katana_maldita': 300,
+  'cristal_dominio': 600,
 }
 
 export default {
@@ -41,17 +41,15 @@ export default {
 
     const trabajo = TRABAJOS[Math.floor(Math.random() * TRABAJOS.length)]
 
-    // Calculamos bonus según items en inventario
     let bonus = 0
     for (const itemId of eco.inventario) {
       bonus += BONUS_ITEMS[itemId] ?? 0
     }
 
-    // Ganancia aleatoria dentro de un rango del trabajo elegido
-    const variacion = Math.floor(Math.random() * 50) - 25 // ±25
+    const variacion = Math.floor(Math.random() * 50) - 25
     const ganado = Math.max(10, trabajo.base + variacion + bonus)
-
-    const nuevoBolsillo = eco.bolsillo + ganado
+    const ganadoBig = BigInt(ganado)
+    const nuevoBolsillo = eco.bolsillo + ganadoBig
 
     db.setEco(sender, {
       bolsillo: nuevoBolsillo,
@@ -61,8 +59,8 @@ export default {
     await react('💰')
     await reply({
       text: `${trabajo.texto}\n\n` +
-        `💰 *Ganaste:* ${ganado} Fragmentos${bonus > 0 ? ` *(+${bonus} bonus de items)*` : ''}\n` +
-        `👜 *Bolsillo actual:* ${nuevoBolsillo} Fragmentos\n\n` +
+        `💰 *Ganaste:* ${ganadoBig.toString()} Fragmentos${bonus > 0 ? ` *(+${bonus} bonus de items)*` : ''}\n` +
+        `👜 *Bolsillo actual:* ${nuevoBolsillo.toString()} Fragmentos\n\n` +
         `> ⏳ Próximo trabajo en *1 hora*`
     })
   }

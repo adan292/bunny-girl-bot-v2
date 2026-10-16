@@ -1,4 +1,4 @@
-import { db } from '../../database/db.js'
+import { db } from "../../database/db.js";
 
 function cleanJid(jid = '') {
   if (!jid) return ''
@@ -51,15 +51,16 @@ export default {
     if (rawArg?.toLowerCase() === 'all' || rawArg?.toLowerCase() === 'todo') {
       cantidad = senderEco.bolsillo
     } else {
-      cantidad = parseInt(rawArg)
+      const parsed = Number(rawArg)
+      cantidad = Number.isFinite(parsed) && parsed > 0 ? BigInt(Math.trunc(parsed)) : null
     }
 
-    if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
+    if (!cantidad || cantidad <= 0n) {
       return await reply({ text: `⚠️ Especifica una cantidad válida.\n\n*Ejemplo:* .donar @user 500\n*O:* .donar @user all` })
     }
 
     if (cantidad > senderEco.bolsillo) {
-      return await reply({ text: `❌ No tenés suficientes Fragmentos en el bolsillo.\n\n*Bolsillo:* ${senderEco.bolsillo} Fragmentos` })
+      return await reply({ text: `❌ No tenés suficientes Fragmentos en el bolsillo.\n\n*Bolsillo:* ${senderEco.bolsillo.toString()} Fragmentos` })
     }
 
     const targetEco = db.getEco(target)
@@ -72,8 +73,8 @@ export default {
       text: `🎁 *Donación exitosa*\n\n` +
         `*De:* @${sender.split('@')[0]}\n` +
         `*Para:* @${target.split('@')[0]}\n` +
-        `*Cantidad:* ${cantidad} Fragmentos\n\n` +
-        `*Tu bolsillo:* ${senderEco.bolsillo - cantidad} Fragmentos`,
+        `*Cantidad:* ${cantidad.toString()} Fragmentos\n\n` +
+        `*Tu bolsillo:* ${(senderEco.bolsillo - cantidad).toString()} Fragmentos`,
       mentions: [sender, target]
     })
   }

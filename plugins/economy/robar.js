@@ -33,7 +33,7 @@ export default {
     }
 
     const targetEco = db.getEco(target);
-    if ((targetEco.bolsillo || 0) < 100) {
+    if (targetEco.bolsillo < 100n) {
       return await reply({ text: "『🔫』Esa persona no tiene suficiente plata en el bolsillo para robarle." });
     }
 
@@ -43,22 +43,22 @@ export default {
     const targetNum = target.split("@")[0];
 
     if (success) {
-      const amount = Math.floor(targetEco.bolsillo * (Math.random() * 0.3 + 0.1));
+      const amount = BigInt(Math.floor(Number(targetEco.bolsillo) * (Math.random() * 0.3 + 0.1)));
       db.setEco(target, { bolsillo: targetEco.bolsillo - amount });
       const senderEco = db.getEco(sender);
-      db.setEco(sender, { bolsillo: (senderEco.bolsillo || 0) + amount });
+      db.setEco(sender, { bolsillo: senderEco.bolsillo + amount });
 
       await reply({
-        text: `💸 ¡Le robaste *${amount}* monedas a @${targetNum}!`,
+        text: `💸 ¡Le robaste *${amount.toString()}* monedas a @${targetNum}!`,
         mentions: [target]
       });
     } else {
       const senderEco = db.getEco(sender);
-      const fine = Math.floor(Math.random() * 150) + 50;
-      db.setEco(sender, { bolsillo: Math.max(0, (senderEco.bolsillo || 0) - fine) });
+      const fine = BigInt(Math.floor(Math.random() * 150) + 50);
+      db.setEco(sender, { bolsillo: senderEco.bolsillo - fine > 0n ? senderEco.bolsillo - fine : 0n });
 
       await reply({
-        text: `🚔 Te atraparon intentando robar a @${targetNum} y pagaste una multa de *${fine}* monedas.`,
+        text: `🚔 Te atraparon intentando robar a @${targetNum} y pagaste una multa de *${fine.toString()}* monedas.`,
         mentions: [target]
       });
     }

@@ -37,6 +37,7 @@ export function setCooldown(jid, key) {
 }
 
 export function addBolsillo(jid, amount) {
-  const user = db.getUser(jid);
-  db.setUser(jid, { bolsillo: (user.bolsillo || 0) + amount });
+  const eco = db.getEco(jid);
+  const parsed = typeof amount === 'bigint' ? amount : BigInt(Math.trunc(Number(amount) || 0));
+  db.setEco(jid, { bolsillo: eco.bolsillo + parsed });
 }
