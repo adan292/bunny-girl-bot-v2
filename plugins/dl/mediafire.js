@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { fileTypeFromBuffer } from 'file-type'
 
-const API_URL = 'https://api.stellarwa.xyz/dl/mediafire?key=api-9yzVU'
+const API_URL = 'https://api.stellarwa.xyz/dl/mediafire?key=Miku_michi'
 
 export default {
   name: ['mediafire'],
