@@ -3,7 +3,7 @@ import { prepareWAMessageMedia } from '@whiskeysockets/baileys'
 
 const API_URL = 'https://api.alyacore.xyz/dl/fastytmp3'
 const SEARCH_URL = 'https://api.alyacore.xyz/search/yt'
-const API_KEY = 'Duarte-zz12'
+const API_KEY = 'Miku_michi'
 const LIMIT_MB = 80
 const LONG_AUDIO_SECONDS = 1800
 const ID_RE = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([\w-]{11})/
