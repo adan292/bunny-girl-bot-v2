@@ -131,10 +131,15 @@ function getBot(jid) {
   return JSON.parse(row.data);
 }
 
+export function getbot(jid) {
+  return getBot(jid);
+}
+
 export const db = {
   getUser,
   getGroup,
   getBot,
+  getbot,
 
   setUser(jid, dataObject) {
     const currentData = getUser(jid);
